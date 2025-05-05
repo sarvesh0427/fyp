@@ -1,0 +1,10 @@
+streamlit
+scikit-learn
+pandas
+numpy
+nltk
+openai
+matplotlib             
+seaborn                
+firebase-admin         
+python-dotenv          
