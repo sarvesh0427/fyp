@@ -37,18 +37,28 @@ def get_chatbot_response(user_input):
 
 # Home section
 if section == "Home":
-    st.title("Mental Health Assistant")
+    st.title("Mind Mitra-AI Mental Health Assistant")
     st.write("### Enter your symptoms below:")
 
     user_input = st.text_area("Symptoms", placeholder="e.g., feeling sad, anxious, trouble sleeping...")
 
     if st.button("Predict"):
         if user_input.strip():
-            try:
-                prediction = simulate_prediction(user_input)
-                st.success(f"Prediction: {prediction}")
-            except Exception as e:
-                st.error(f"Error during prediction: {e}")
+            # Static prediction for demonstration
+            prediction = "Anxiety"
+            st.success(f"Possible Illness: {prediction}")
+
+            # Precautions or tips for anxiety
+            st.markdown("### 🧘 Precautions and Tips for Managing Anxiety:")
+            st.markdown("""
+            - 💤 Ensure you get enough **sleep** and maintain a consistent sleep schedule.
+            - 🏃‍♀️ **Exercise** regularly to help reduce stress hormones.
+            - 🍎 Eat a **balanced diet** and stay hydrated.
+            - 🧘 Practice **deep breathing**, **meditation**, or **yoga**.
+            - 📵 Limit **caffeine**, **alcohol**, and **screen time**.
+            - 🗣 Talk to a **trusted friend** or a **mental health professional**.
+            - 📝 Try **journaling** to express your thoughts and emotions.
+            """)
         else:
             st.warning("Please enter some symptoms to get a prediction.")
 
