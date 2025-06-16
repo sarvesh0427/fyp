@@ -1,16 +1,15 @@
 import streamlit as st
-
-st.set_page_config(
-page_title="Mind Mantra",  # 👈 This is the name in the browser tab
-page_icon="img.png",            # 👈 This is the icon (can be emoji or URL to .ico/.png)
-layout="centered",         # Optional: "wide" or "centered"
-initial_sidebar_state="expanded"  # Optional
-)
 import home
 import chatbot
 import confession
 import about
 
+st.set_page_config(
+page_title="Mind Mantra",
+page_icon="img.png",
+layout="centered",
+initial_sidebar_state="expanded"
+)
 
 # Sidebar navigation
 st.sidebar.title("Navigation")
