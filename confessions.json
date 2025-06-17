@@ -1,0 +1,141 @@
+[
+  {
+    "id": 1,
+    "username": "Anonymous8172",
+    "timestamp": "Tuesday @ 09:23 AM",
+    "message": "Hiiii",
+    "replies": []
+  },
+  {
+    "id": 2,
+    "username": "Anonymous8172",
+    "timestamp": "Tuesday @ 09:26 AM",
+    "message": "Hiiii",
+    "replies": []
+  },
+  {
+    "id": 3,
+    "username": "Anonymous7952",
+    "timestamp": "Tuesday @ 09:27 AM",
+    "message": "thankyou streamlit for creating thiss",
+    "replies": []
+  },
+  {
+    "id": 4,
+    "username": "Anonymous7952",
+    "timestamp": "Tuesday @ 09:28 AM",
+    "message": "thankyou streamlit for creating thiss",
+    "replies": []
+  },
+  {
+    "id": 5,
+    "username": "Anonymous7952",
+    "timestamp": "Tuesday @ 09:28 AM",
+    "message": "thankyou streamlit for creating thiss",
+    "replies": []
+  },
+  {
+    "id": 6,
+    "username": "Anonymous7952",
+    "timestamp": "Tuesday @ 09:28 AM",
+    "message": "thankyou streamlit for creating thiss",
+    "replies": [
+      {
+        "username": "Anonymous0605",
+        "timestamp": "Tuesday @ 10:12 AM",
+        "message": "me too"
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "username": "Anonymous7952",
+    "timestamp": "Tuesday @ 09:28 AM",
+    "message": "thankyou streamlit for creating thiss",
+    "replies": [
+      {
+        "username": "Anonymous1305",
+        "timestamp": "Tuesday @ 09:36 AM",
+        "message": "yes this also help me a lot"
+      },
+      {
+        "username": "Anonymous1305",
+        "timestamp": "Tuesday @ 09:37 AM",
+        "message": "yes this also help me a lot"
+      },
+      {
+        "username": "Anonymous1305",
+        "timestamp": "Tuesday @ 09:37 AM",
+        "message": "yes this also help me a lot"
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "username": "Anonymous5015",
+    "timestamp": "Tuesday @ 09:38 AM",
+    "message": "hii",
+    "replies": [
+      {
+        "username": "Anonymous5015",
+        "timestamp": "Tuesday @ 09:38 AM",
+        "message": "hello"
+      },
+      {
+        "username": "Anonymous5015",
+        "timestamp": "Tuesday @ 09:41 AM",
+        "message": "hii"
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "username": "Anonymous5015",
+    "timestamp": "Tuesday @ 10:00 AM",
+    "message": "hii",
+    "replies": [
+      {
+        "username": "Anonymous5015",
+        "timestamp": "Tuesday @ 10:02 AM",
+        "message": "hii"
+      },
+      {
+        "username": "Anonymous8891",
+        "timestamp": "Tuesday @ 10:04 AM",
+        "message": "hello did it help you"
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "username": "Anonymous5015",
+    "timestamp": "Tuesday @ 10:02 AM",
+    "message": "grateful for this app",
+    "replies": [
+      {
+        "username": "Anonymous8891",
+        "timestamp": "Tuesday @ 10:03 AM",
+        "message": "yes me too"
+      },
+      {
+        "username": "Anonymous3257",
+        "timestamp": "Tuesday @ 10:14 AM",
+        "message": "yes me too"
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "username": "Anonymous0605",
+    "timestamp": "Tuesday @ 10:12 AM",
+    "message": "thanks for creating this webapp this app helps a lot",
+    "replies": []
+  },
+  {
+    "id": 12,
+    "username": "Anonymous3257",
+    "timestamp": "Tuesday @ 10:14 AM",
+    "message": "hiii",
+    "replies": []
+  }
+]
