@@ -1,8 +1,5 @@
 import streamlit as st
-import home
-import chatbot
-import confession
-import about
+
 
 st.set_page_config(
 page_title="Mind Mantra",
@@ -10,16 +7,20 @@ page_icon="img.png",
 layout="centered",
 initial_sidebar_state="expanded"
 )
+import home
+# import chatbot
+import confession
+import about
 
 # Sidebar navigation
 st.sidebar.title("Navigation")
-section = st.sidebar.radio("Go to", ["Home", "Chatbot","Anonymous Confession Wall","About"])
+section = st.sidebar.radio("Go to", ["Home","Anonymous Confession Wall","About"])
 
 if section == 'Home':
     home.home_show()
 
-elif section == 'Chatbot':
-    chatbot.chatbot_display()
+# elif section == 'Chatbot':
+#     chatbot.chatbot_display()
 
 elif section == 'Anonymous Confession Wall':
     confession.confess()

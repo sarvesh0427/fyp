@@ -67,7 +67,7 @@ def add_confession(username, message):
     new_confession = {
         "id": len(confessions) + 1,
         "username": username,
-        "timestamp": datetime.now().strftime('%A @ %-I:%M %p'),
+        "timestamp": datetime.now().strftime('%A @ %I:%M %p'),
         "message": message,
         "replies": []
     }
@@ -80,7 +80,7 @@ def add_reply(confession_id, username, message):
         if c["id"] == confession_id:
             c["replies"].append({
                 "username": username,
-                "timestamp": datetime.now().strftime('%A @ %-I:%M %p'),
+                "timestamp": datetime.now().strftime('%A @ %I:%M %p'),
                 "message": message
             })
             break
