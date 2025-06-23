@@ -1,8 +1,17 @@
+
 import streamlit as st
+import joblib
+import random
 from streamlit_lottie import st_lottie
 import requests
+import time
+import random
+# Load model and artifacts
+mdl = joblib.load("mental_health_model.joblib")
+le = joblib.load("label_encoder.joblib")
+symptoms = joblib.load("symptoms_list.joblib")
 
-# --- Load Lottie Animation ---
+# Load Lottie animations
 def load_lottie_url(url: str):
     try:
         r = requests.get(url, timeout=5)
@@ -12,72 +21,102 @@ def load_lottie_url(url: str):
         pass
     return None
 
-# Doctor-patient animation from lottie.com
 lottie_mental = load_lottie_url("https://assets9.lottiefiles.com/packages/lf20_jcikwtux.json")
 
-def home_show():
-    # --- Custom CSS Styling ---
-    st.markdown("""
+# Custom CSS for soft green styling (Predict button + Sidebar only)
+st.markdown("""
     <style>
-        .stApp { background-color: #0f0f0f; color: #f5f5f5; padding-top: 5px; }
-        .title { font-size: 2.2em; font-weight: bold; text-align: center; margin-bottom: 0; }
-        .subtitle { font-size: 1em; color: #bbbbbb; text-align: center; margin-bottom: 0.8em; }
-        .label { text-align: center; font-size: 1.1em; margin-bottom: 0.5em; }
-        .stTextInput>div>div>input {
-            text-align: center; font-size: 0.95em; padding: 6px 10px;
-            width: 100%; max-width: 400px; margin: auto; display: block;
-        }
-        .stButton button {
-            width: 100%; max-width: 300px; margin: 5px auto; font-size: 1em;
-        }
-        .result {
-            background-color: #14532d; color: white;
-            padding: 0.8em; border-radius: 8px;
-            margin-top: 1em; text-align: center;
-        }
-        .tips {
-            font-size: 0.95em; line-height: 1.6;
-            margin-top: 0.8em; max-width: 450px;
-            margin-left: auto; margin-right: auto; text-align: left;
-        }
+    /* Soft green Predict button */
+    div.stButton > button:first-child {
+        background-color: #a8d5ba;
+        color: black;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5em 1em;
+        font-size: 1em;
+        transition: background-color 0.3s ease;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #94c9aa;
+        color: white;
+    }
+
     </style>
+""", unsafe_allow_html=True)
+
+def home_show():
+#     quotes = [
+#     "Believe you can and you're halfway there.",
+#     "Every day may not be good... but there is something good in every day.",
+#     "Your present circumstances don’t determine where you can go; they merely determine where you start.",
+#     "Healing takes time, and that's okay.",
+#     "You are enough, just as you are."
+# ]
+
+# # This will refresh the app every 45,000 milliseconds (45 seconds)
+# st_autorefresh = st.experimental_singleton(lambda: st.experimental_rerun)
+# st.experimental_set_query_params(refresh=int(time.time()))
+
+# # Get current time and use it to pick quote
+# index = int(time.time() // 45) % len(quotes)
+
+# st.info(f"*{quotes[index]}*")
+
+# # Use Streamlit's built-in function to auto refresh every 45 seconds
+# st.experimental_memo.clear()  # Clear cache to avoid showing same quote
+# st.experimental_rerun()
+
+
+    # 1. Motivational Quote
+    quotes = [
+        "Believe you can and you're halfway there.",
+        "Every day may not be good... but there is something good in every day.",
+        "Your present circumstances don’t determine where you can go; they merely determine where you start.",
+        "Healing takes time, and that's okay.",
+        "You are enough, just as you are."
+    ]
+    st.info(f"*{random.choice(quotes)}*")
+   
+    # 2. Welcome Title + Animation
+    
+    st.markdown("""
+        <h2 style='text-align: center;'>
+            🧠 Welcome to <span style='color: #3CB371;'>Mind Mantra</span>
+        </h2>
     """, unsafe_allow_html=True)
+    st_lottie(lottie_mental, height=150, key="mental")
 
-    # --- Header ---
-    st.markdown("<div class='title'>🧠 Mind Mitra</div>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitle'>Your AI Mental Health Companion</div>", unsafe_allow_html=True)
 
-    # --- Animation ---
-    if lottie_mental:
-        st_lottie(lottie_mental, height=150)
-    else:
-        st.warning("⚠️ Could not load the animation.")
+    # 3. Symptom Text Input
+    st.markdown("### 📝 Enter Your Symptoms")
+    user_input = st.text_area("", placeholder="e.g., sleep disturbance, irritability, dizziness...")
 
-    # --- Symptom Input ---
-    st.markdown("<div class='label'>🔍 Describe your symptoms:</div>", unsafe_allow_html=True)
-    symptoms = st.text_input("", placeholder="e.g., feeling anxious, can’t sleep, low energy")
+    # 4. Symptom Multiselect
+    st.markdown("### 🩺 Or Select from the List")
+    selected_symptoms = st.multiselect("", symptoms)
 
-    # --- Prediction + Tips ---
-    if st.button("Predict"):
-        if symptoms.strip():
-            predicted = "Anxiety"
-            st.markdown(f"<div class='result'>🧾 Possible Condition: {predicted}</div>", unsafe_allow_html=True)
+    # Predict Button
+    if st.button("💡 Predict Mental Health Condition"):
+        if user_input.strip() or selected_symptoms:
+            typed_symptoms = [s.strip() for s in user_input.split(",") if s.strip()]
+            input_symptoms = list(set(typed_symptoms + selected_symptoms))
 
-            st.markdown("### 💡 Tips & Precautions:", unsafe_allow_html=True)
-            tips = [
-                "🧘 Try 5–10 minutes of meditation or deep breathing.",
-                "📝 Keep a mood journal to track patterns.",
-                "🚶 Get sunlight and a short walk each day.",
-                "📵 Reduce social media use before bedtime.",
-                "🗣 Talk with someone you trust or a counselor.",
-            ]
-            st.markdown("<div class='tips'>" + "<br>".join(f"- {tip}" for tip in tips) + "</div>", unsafe_allow_html=True)
+            if len(input_symptoms) < 6:
+                st.warning("⚠️ Please enter or select at least 6 symptoms.")
+                return
+
+            input_vector = [1 if symptom in input_symptoms else 0 for symptom in symptoms]
+            prediction = mdl.predict([input_vector])[0]
+            predicted_disease = le.inverse_transform([prediction])[0]
+
+            if hasattr(mdl, "predict_proba"):
+                confidence = max(mdl.predict_proba([input_vector])[0]) * 100
+                st.success(f"🧾 Predicted Condition: **{predicted_disease}**")
+                st.info(f"Confidence: {confidence:.2f}%")
+            else:
+                st.success(f"🧾 Predicted Condition: **{predicted_disease}**")
+
+            st.markdown("💡 _Note: This tool is informational. For real diagnosis, consult a professional._")
         else:
-            st.warning("Please enter your symptoms first.")
+            st.warning("⚠️ Please enter or select symptoms.")
 
-    # --- Footer ---
-    st.markdown("---")
-    st.markdown(
-        "<p style='text-align:center; color:gray;'>Made with ❤️ by students of Pokhara University | Final Year Project</p>",
-        unsafe_allow_html=True
-    )

@@ -1,38 +1,38 @@
+
 import streamlit as st
 import random
 import string
 from datetime import datetime
-import json
-import os
 import hashlib
 import certifi
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
+from bson.objectid import ObjectId
+import pandas as pd
+import io
 
 # --- MongoDB Setup ---
-MONGO_URI = "mongodb+srv://mindmantra:minmantra%40123@cluster0.iowcnhs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-client = MongoClient(MONGO_URI,tlsCAFile=certifi.where())
-db = client.confession_wall
+MONGO_URI = "mongodb+srv://bhujelsuja:mindmitra2001@cluster0.qihuqeg.mongodb.net/"
+client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+db = client.confession_db
+
 users_col = db.users
+confessions_col = db.confession
 
-# JSON files for confessions (local)
-CONFESSION_FILE = "confessions.json"
+# --- Utils Functions ---
 
-# Generate random anonymous username
 def get_random_username():
     return "Anonymous" + ''.join(random.choices(string.digits, k=4))
 
-# Password hashing for security 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# Register or login user in MongoDB
 def register_or_login_user(email, password):
     hashed_pw = hash_password(password)
     user = users_col.find_one({"email": email})
 
     if user is None:
-        # Register new user
+        # New registration
         username = get_random_username()
         try:
             users_col.insert_one({
@@ -42,52 +42,111 @@ def register_or_login_user(email, password):
             })
             return True, f"Registered and logged in as {username}.", username
         except DuplicateKeyError:
-            return False, "User already exists, please try logging in.", None
-
+            return False, "User already exists. Please log in.", None
     else:
-        # User exists, check password
+        # Existing user login
         if user['password'] == hashed_pw:
             return True, "Login successful.", user['username']
         else:
             return False, "Incorrect password.", None
 
-# Confession Logic
 def load_confessions():
-    if not os.path.exists(CONFESSION_FILE):
-        return []
-    with open(CONFESSION_FILE, "r") as f:
-        return json.load(f)
-
-def save_confessions(confessions):
-    with open(CONFESSION_FILE, "w") as f:
-        json.dump(confessions, f, indent=2)
+    return list(confessions_col.find())
 
 def add_confession(username, message):
-    confessions = load_confessions()
     new_confession = {
-        "id": len(confessions) + 1,
         "username": username,
-        "timestamp": datetime.now().strftime('%A @ %-I:%M %p'),
+        "timestamp": datetime.now().strftime('%A @ %I:%M %p'),
         "message": message,
         "replies": []
     }
-    confessions.append(new_confession)
-    save_confessions(confessions)
+    confessions_col.insert_one(new_confession)
 
 def add_reply(confession_id, username, message):
-    confessions = load_confessions()
-    for c in confessions:
-        if c["id"] == confession_id:
-            c["replies"].append({
+    confessions_col.update_one(
+        {"_id": ObjectId(confession_id)},
+        {"$push": {
+            "replies": {
                 "username": username,
-                "timestamp": datetime.now().strftime('%A @ %-I:%M %p'),
+                "timestamp": datetime.now().strftime('%A @ %I:%M %p'),
                 "message": message
-            })
-            break
-    save_confessions(confessions)
+            }
+        }}
+    )
+
+# --- Admin Panel Functions ---
+
+def export_to_csv(data_list, filename):
+    df = pd.DataFrame(data_list)
+    buffer = io.BytesIO()
+    df.to_csv(buffer, index=False)
+    st.download_button(
+        label=f"📥 Download {filename}",
+        data=buffer.getvalue(),
+        file_name=f"{filename}.csv",
+        mime='text/csv'
+    )
+
+def show_admin_panel():
+    st.title("🛠️ Admin Panel")
+
+    # Fetch data here
+    users = list(users_col.find({}, {"_id": 0}))
+    confessions = list(confessions_col.find({}, {"_id": 0}))
+
+    # Export capability
+    st.subheader("📤 Export Data")
+    export_to_csv(users, "users")
+    export_to_csv(confessions, "confessions")
+
+    # Show list of users
+    st.subheader("👥 Registered Users")
+    for user in users:
+        st.markdown(f"- **{user['username']}** | {user['email']}")
+
+    # Show all confessions and replies with delete options
+    st.subheader("🧾 All Confessions")
+    for confession in reversed(load_confessions()):
+        confession_id = str(confession['_id'])
+        st.markdown(f"**{confession['username']}**: {confession['message']}")
+        st.markdown(
+            f"<div style='color: gray; font-size: small;'>{confession['timestamp']}</div>",
+            unsafe_allow_html=True,
+        )
+
+        # Replies with delete option
+        for i, reply in enumerate(confession.get('replies', [])):
+            st.markdown(f"&nbsp;&nbsp;&nbsp; ↳ **{reply['username']}**: {reply['message']}")
+            st.markdown(
+                f"<div style='color: gray; font-size: small;'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {reply['timestamp']}</div>",
+                unsafe_allow_html=True,
+            )
+            if st.button("Delete Reply", key=f"del_reply_{confession_id}_{i}"):
+                confessions_col.update_one(
+                    {"_id": ObjectId(confession_id)},
+                    {"$pull": {"replies": reply}}
+                )
+                st.success("Reply deleted.")
+                safe_rerun()
+
+        # Option to delete entire confession
+        if st.button("🗑️ Delete Confession", key=f"delete_{confession_id}"):
+            confessions_col.delete_one({"_id": ObjectId(confession_id)})
+            st.success("Confession deleted.")
+            safe_rerun()
+
+def safe_rerun():
+    try:
+        st.experimental_rerun()
+    except AttributeError:
+        st.stop()
+
+# --- Main App Functionality ---
+
+ADMIN_EMAIL = "admin@confession.com"
 
 def confess():
-    # --- Login system ---
+    # Login/Register
     if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
         st.title("🔐 Login to Confession Wall")
         email = st.text_input("Email")
@@ -101,26 +160,28 @@ def confess():
                     st.session_state['username'] = username
                     st.session_state['logged_in'] = True
                     st.success(msg)
-                    st.rerun()
-
+                    safe_rerun()
                 else:
                     st.error(msg)
             else:
                 st.warning("Please enter both email and password.")
         return
 
-    # --- Logout option ---
+    # Logout button
     if st.button("Logout"):
         for key in ['logged_in', 'email', 'username']:
-            if key in st.session_state:
-                del st.session_state[key]
-        st.rerun()
+            st.session_state.pop(key, None)
+        safe_rerun()
 
-    # --- Confession Wall UI ---
+    # Admin panel
+    if st.session_state.get('email') == ADMIN_EMAIL:
+        show_admin_panel()
+        return
+
+    # Normal user view
     st.title("🙊 Anonymous Confession Wall")
     st.markdown(f"You're posting as: **{st.session_state['username']}**")
 
-    # Clear confession box logic
     if 'clear_new_confession' not in st.session_state:
         st.session_state['clear_new_confession'] = False
     if st.session_state['clear_new_confession']:
@@ -134,51 +195,46 @@ def confess():
             add_confession(st.session_state['username'], st.session_state.new_confession.strip())
             st.success("Your anonymous confession has been posted!")
             st.session_state['clear_new_confession'] = True
-            st.rerun()
+            safe_rerun()
         else:
             st.warning("Please write something before submitting.")
 
-    # Show recent confessions
     st.subheader("📜 Recent Confessions")
     confessions = load_confessions()
-
     if not confessions:
         st.info("No confessions yet. Be the first to confess!")
         return
 
     for confession in reversed(confessions[-30:]):
+        confession_id = str(confession['_id'])
         st.markdown(f"**{confession['username']}**: {confession['message']}")
         st.markdown(
             f"<div style='color: gray; font-size: small;'>{confession['timestamp']}</div>",
             unsafe_allow_html=True,
         )
 
-        # Show replies
-        for reply in confession['replies']:
+        for reply in confession.get('replies', []):
             st.markdown(f"&nbsp;&nbsp;&nbsp; ↳ **{reply['username']}**: {reply['message']}")
             st.markdown(
                 f"<div style='color: gray; font-size: small;'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {reply['timestamp']}</div>",
                 unsafe_allow_html=True,
             )
 
-        # Handle reply box logic
-        reply_key = f"reply_{confession['id']}"
+        reply_key = f"reply_{confession_id}"
         clear_flag_key = f"clear_{reply_key}"
-
         if clear_flag_key not in st.session_state:
             st.session_state[clear_flag_key] = False
         if st.session_state[clear_flag_key]:
             st.session_state[reply_key] = ""
             st.session_state[clear_flag_key] = False
 
-        reply_text = st.text_input(f"Reply to confession {confession['id']}", key=reply_key)
-
-        if st.button("Submit Reply", key=f"btn_{confession['id']}"):
+        st.text_input("Reply to confession", key=reply_key)
+        if st.button("Submit Reply", key=f"btn_{confession_id}"):
             if st.session_state[reply_key].strip():
-                add_reply(confession['id'], st.session_state['username'], st.session_state[reply_key].strip())
+                add_reply(confession_id, st.session_state['username'], st.session_state[reply_key].strip())
                 st.success("Your anonymous reply has been posted!")
                 st.session_state[clear_flag_key] = True
-                st.rerun()
+                safe_rerun()
             else:
                 st.warning("Please write something before submitting your reply.")
 
