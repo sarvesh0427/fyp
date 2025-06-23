@@ -5,7 +5,7 @@ from sklearn.ensemble import RandomForestClassifier
 import joblib
 
 # Load dataset
-df = pd.read_csv('trail.csv')
+df = pd.read_csv('mindmantra_dataset.csv')
 
 # Features and label
 X = df.drop('Disease', axis=1)
