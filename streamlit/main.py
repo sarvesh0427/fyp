@@ -1,99 +1,101 @@
-
 import streamlit as st
 
-# Your existing set_page_config
+# Page configuration
 st.set_page_config(
     page_title="Mind Mantra",
     page_icon="img1.png",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Initialize dark mode in session state
-if 'dark_mode' not in st.session_state:
-    st.session_state.dark_mode = False
-
-# Sidebar CSS for positioning toggle top right
-st.sidebar.markdown("""
+# Apply custom styles for UI/UX with bold sidebar font
+st.markdown("""
 <style>
-.css-1d391kg {  /* sidebar container */
-    position: relative;
-    padding-top: 30px;
+/* General font */
+html, body, [class*="css"] {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 16px;
 }
-.top-right-toggle {
-    position: absolute;
-    top: 10px;
-    right: 15px;
+
+/* Sidebar container */
+[data-testid="stSidebar"] {
+    background-color: #3CB371;
+    padding: 20px 15px;
+    border-radius: 0px 10px 10px 0px;
+}
+
+/* Sidebar text - titles, labels, spans, radio text */
+[data-testid="stSidebar"] * {
+    color: white !important;
+    font-weight: bold !important;
+}
+
+/* Sidebar radio buttons */
+.css-1v0mbdj > div > div {
+    background-color: white;
+    border-radius: 10px;
+    padding: 6px 10px;
+    margin: 5px 0;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    color: #3CB371;
+}
+.css-1v0mbdj > div > div:hover {
+    background-color: #2E8B57;
+    color: white;
+}
+
+/* Main App Background */
+.stApp {
+    background-color: #f9f9f9;
+    padding: 1rem;
+}
+
+/* Footer */
+footer, footer p {
+    text-align: center;
+    font-size: 14px;
+    color: #888;
+}
+
+/* Buttons */
+button[kind="primary"] {
+    background-color: #3CB371 !important;
+    color: white !important;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-weight: bold;
+    transition: all 0.2s ease-in-out;
+}
+button[kind="primary"]:hover {
+    background-color: #2E8B57 !important;
+    transform: scale(1.03);
 }
 </style>
 """, unsafe_allow_html=True)
 
-# Dark mode toggle checkbox positioned top right in sidebar
-with st.sidebar.container():
-    st.markdown('<div class="top-right-toggle">', unsafe_allow_html=True)
-    toggle = st.checkbox("Dark Mode", value=st.session_state.dark_mode, key="dark_mode_toggle")
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.session_state.dark_mode = toggle
-
-# Apply theme based on toggle
-def set_theme(dark_mode: bool):
-    if dark_mode:
-        st.markdown("""
-        <style>
-        body, .css-1d391kg, .css-1v0mbdj, .stApp {
-            background-color: #121212;
-            color: white;
-        }
-        [data-testid="stSidebar"] {
-            background-color: #222 !important;
-            color: white !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <style>
-        /* Sidebar background */
-        [data-testid="stSidebar"] {
-            background-color:  #3CB371;   /* dark green */
-            color: white !important;
-        }
-        /* Optional: Sidebar text color for better contrast */
-        [data-testid="stSidebar"] div, 
-        [data-testid="stSidebar"] span {
-            color: white !important;
-        }
-        body, .css-1d391kg, .css-1v0mbdj, .stApp {
-            background-color: white;
-            color: black;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-set_theme(st.session_state.dark_mode)
-
-# Then import your modules and do your app logic
+# Import your modules
 import home
 import fhome
 import confession
 import about
 
 # Sidebar navigation
-st.sidebar.title("Navigation")
-section = st.sidebar.radio("Go to", ["Home","Anonymous Confession Wall","About"])
+st.sidebar.title("🧠 Mind Mantra")
+section = st.sidebar.radio("Go to", ["🏠 Home", "📝 Anonymous Confession Wall", "ℹ️ About"])
 
-if section == 'Home':
-    # home.home_show()
+# Section logic
+if section == "🏠 Home":
     fhome.fhome_show()
-elif section == 'Anonymous Confession Wall':
+elif section == "📝 Anonymous Confession Wall":
     confession.confess()
-
-elif section == 'About':
+elif section == "ℹ️ About":
     about.about_show()
 
-# footer
-st.markdown("---------")
-st.markdown(
-    "<p style='text-align: center;'>© 2025 Final Year Project | School of Engineering, Pokhara University - Nepal</p>",
-    unsafe_allow_html=True
-)
+# Footer
+st.markdown("<hr>", unsafe_allow_html=True)
+st.markdown("""
+<p style='text-align: center; color: #666; margin-top: 20px;'>
+    © 2025 Final Year Project | School of Engineering, Pokhara University – Nepal
+</p>
+""", unsafe_allow_html=True)

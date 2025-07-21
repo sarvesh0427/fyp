@@ -10,3 +10,4 @@ seaborn
 firebase-admin         
 python-dotenv          
 streamlit-lottie
+openpyxl
