@@ -11,3 +11,4 @@ firebase-admin
 python-dotenv          
 streamlit-lottie
 openpyxl
+pymongo
