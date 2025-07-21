@@ -1,55 +1,4 @@
-# import streamlit as st
 
-# # Your existing set_page_config
-# st.set_page_config(
-#     page_title="Mind Mantra",
-#     page_icon="img.png",
-#     layout="centered",
-#     initial_sidebar_state="expanded"
-# )
-
-# # Inject CSS for sidebar green background
-# st.markdown(
-#     """
-#     <style>
-#     /* Sidebar background */
-#     [data-testid="stSidebar"] {
-#         background-color:  #3CB371;   /* dark green */
-#     }
-#     /* Optional: Sidebar text color for better contrast */
-#     [data-testid="stSidebar"] div, 
-#     [data-testid="stSidebar"] span {
-#         color: white !important;
-#     }
-#     </style>
-#     """,
-#     unsafe_allow_html=True,
-# )
-
-# # Then import your modules and do your app logic
-# import home
-# import confession
-# import about
-
-# # Sidebar navigation
-# st.sidebar.title("Navigation")
-# section = st.sidebar.radio("Go to", ["Home","Anonymous Confession Wall","About"])
-
-# if section == 'Home':
-#     home.home_show()
-
-# elif section == 'Anonymous Confession Wall':
-#     confession.confess()
-
-# elif section == 'About':
-#     about.about_show()
-
-# # footer
-# st.markdown("---------")
-# st.markdown(
-#     "<p style='text-align: center;'>© 2025 Final Year Project | School of Engineering, Pokhara University - Nepal</p>",
-#     unsafe_allow_html=True
-# )
 import streamlit as st
 
 # Your existing set_page_config
@@ -125,6 +74,7 @@ set_theme(st.session_state.dark_mode)
 
 # Then import your modules and do your app logic
 import home
+import fhome
 import confession
 import about
 
@@ -133,8 +83,8 @@ st.sidebar.title("Navigation")
 section = st.sidebar.radio("Go to", ["Home","Anonymous Confession Wall","About"])
 
 if section == 'Home':
-    home.home_show()
-
+    # home.home_show()
+    fhome.fhome_show()
 elif section == 'Anonymous Confession Wall':
     confession.confess()
 

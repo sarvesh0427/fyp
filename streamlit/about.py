@@ -2,15 +2,14 @@ import streamlit as st
 
 def about_show():
     st.title('About the Project')
-    st.subheader("AI Powered Mental Health Assistant")
+    st.subheader("Mind Mantra: AI Powered Mental Health Support System")
     st.write("""
-        This project is a final year capstone project developed by a Computer Engineering student from the School of Engineering, Pokhara University. It is an AI-powered Mental Health Assistant System designed to assist individuals who are experiencing mental health challenges.
+        This project is a final year capstone project developed by a Computer Engineering student from the School of Engineering, Pokhara University. It is an AI-powered Mental Health Support System designed to assist individuals who are experiencing mental health challenges.
         """)
     st.subheader("The system offers:")
     st.markdown("""
         - Symptom-based prediction of mental health conditions.
-        - Recommendations including therapy options, medicines, and professionals if necessary.
-        - An AI-powered chatbot for users to open up and talk freely in a safe, supportive space.
+        - Provide precautions to recover from illness.
         The goal of this platform is to provide accessible mental health support and encourage people to talk about their mental well-being without fear of judgment.
         """)
 

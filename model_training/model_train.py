@@ -3,9 +3,18 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 import joblib
+import os
+import pandas as pd
 
-# Load dataset
-df = pd.read_csv('mindmantra_dataset.csv')
+# Define base directory relative to current file
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Construct dataset path relative to this file
+illness_data_path = os.path.join(base_dir, "..", "datasets", "illness_dataset.csv")
+
+# Load data
+df = pd.read_csv(illness_data_path)
+
 
 # Features and label
 X = df.drop('Disease', axis=1)
