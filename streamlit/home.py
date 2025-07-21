@@ -1,5 +1,6 @@
 import streamlit as st
 import joblib
+from jinja2.sandbox import unsafe
 from streamlit_lottie import st_lottie
 import requests
 import random
@@ -20,7 +21,7 @@ mdl = joblib.load(model_path)
 le = joblib.load(encoder_path)
 symptoms = joblib.load(symptoms_path)
 
-def home_show():
+def fhome_show():
 
     def load_lottie_url(url: str):
         try:
@@ -56,9 +57,11 @@ def home_show():
         "Every day may not be good... but there is something good in every day.",
         "Your present circumstances don’t determine where you can go; they merely determine where you start.",
         "Healing takes time, and that's okay.",
-        "You are enough, just as you are."
+        "You are enough, just as you are.",
+        "You alone are enough. You have nothing to prove to anybody",
+        "Healing grows in honesty, openness, and the courage to speak",
+        "Sometimes the people around you won't understand your journey",
     ]
-    st.info(f"*{random.choice(quotes)}*")
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     illness_data_path = os.path.join(base_dir, "..", "datasets", "illness_dataset.csv")
@@ -73,7 +76,14 @@ def home_show():
         <h2 style='text-align: center;'>🧠 Welcome to <span style='color: #3CB371;'>Mind Mantra</span></h2>
     """, unsafe_allow_html=True)
     st_lottie(lottie_mental, height=150, key="mental")
-
+    st.markdown(
+        f"""
+        <div style='text-align: center; font-size: 18px; color: #2E8B57; background-color: #E0F8E0; padding: 10px; border-radius: 10px;'>
+            <strong>{random.choice(quotes)}</strong>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     symptoms = df_ill.columns[1:]
     normalized_column_map = {col.replace("_", " ").lower(): col for col in symptoms}
 
@@ -176,7 +186,7 @@ def home_show():
         ]
     }
 
-    st.title("🧠 Mental Health Condition Predictor")
+    st.title(" Mental Health Condition Predictor")
     with st.container():
         left_column, right_column = st.columns(2)
         with left_column:
@@ -276,6 +286,7 @@ def home_show():
             else:
                 st.info(f"You may have some symptoms of **{disease}**, but further evaluation is recommended.")
 
+            st.markdown("💡 _Note: This tool is informational. For real diagnosis, consult a professional._")
             # ========== Precaution Lookup ==========
 
             excel_path = os.path.join(base_dir,"..","datasets", "precaution_dataset.xlsx")
@@ -318,4 +329,15 @@ def home_show():
                 # Force rerun and skip all below
                 st.experimental_set_query_params(clear="1")  # optional: clear URL parameters
                 st.stop()  # ✅ stop Streamlit from continuing below this point
+
+            st.markdown(f"Do you want to know more about **{disease}**?")
+            col1, col2 = st.columns(2)
+            if col1.button("✅ Yes"):
+                st.session_state.follow_up_answers.append("Yes")
+                st.session_state.follow_up_index += 1
+                st.rerun()  # Rerun to refresh view with updated state
+            if col2.button("❌ No"):
+                st.session_state.follow_up_answers.append("No")
+                st.session_state.follow_up_index += 1
+                st.rerun()  # Rerun to refresh view with updated state
 

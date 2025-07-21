@@ -1,4 +1,5 @@
 import streamlit as st
+from PIL import Image
 
 # Page configuration
 st.set_page_config(
@@ -79,13 +80,31 @@ import home
 import fhome
 import confession
 import about
+import base64
+from io import BytesIO
+
+def image_to_base64(img):
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode()
 
 # Sidebar navigation
-st.sidebar.title("🧠 Mind Mantra")
-section = st.sidebar.radio("Go to", ["🏠 Home", "📝 Anonymous Confession Wall", "ℹ️ About"])
+image = Image.open('streamlit/img1.png')
+image = image.resize((120, 120))
+st.sidebar.markdown(
+    f"""
+    <div style='text-align: center;'>
+        <img src="data:image/png;base64,{image_to_base64(image)}" width="120"/>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+section = st.sidebar.radio("", ["🏠 Home", "📝 Anonymous Confession Wall", "ℹ️ About"])
 
 # Section logic
 if section == "🏠 Home":
+    #home.home_show()
     fhome.fhome_show()
 elif section == "📝 Anonymous Confession Wall":
     confession.confess()

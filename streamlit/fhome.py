@@ -1,5 +1,6 @@
 import streamlit as st
 import joblib
+from jinja2.sandbox import unsafe
 from streamlit_lottie import st_lottie
 import requests
 import random
@@ -75,7 +76,14 @@ def fhome_show():
         <h2 style='text-align: center;'>🧠 Welcome to <span style='color: #3CB371;'>Mind Mantra</span></h2>
     """, unsafe_allow_html=True)
     st_lottie(lottie_mental, height=150, key="mental")
-    st.info(f"**{random.choice(quotes)}**")
+    st.markdown(
+        f"""
+        <div style='text-align: center; font-size: 18px; color: #2E8B57; background-color: #E0F8E0; padding: 10px; border-radius: 10px;'>
+            <strong>{random.choice(quotes)}</strong>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     symptoms = df_ill.columns[1:]
     normalized_column_map = {col.replace("_", " ").lower(): col for col in symptoms}
 
@@ -178,32 +186,43 @@ def fhome_show():
         ]
     }
 
-    st.title(" Mental Health Condition Predictor")
+    st.title("🧠 Mental Health Condition Predictor")
+
+    # Default session state
+    for key, default in {
+        "follow_up_index": 0,
+        "follow_up_answers": [],
+        "follow_up_complete": False,
+        "follow_up_triggered": False,
+        "user_input": "",
+        "selected_symptoms": [],
+        "cleared": False
+    }.items():
+        if key not in st.session_state:
+            st.session_state[key] = default
+
+    # Input container
     with st.container():
         left_column, right_column = st.columns(2)
         with left_column:
             st.markdown("### 📝 Enter Your Symptoms")
-            user_input = st.text_area("", placeholder="e.g., sleep disturbance, irritability, dizziness...")
+            st.text_area("", key="user_input", placeholder="e.g., sleep disturbance, irritability, dizziness...")
+
         with right_column:
             display_symptoms = [s.replace("_", " ") for s in symptoms]
             symptom_display_to_actual = dict(zip(display_symptoms, symptoms))
             st.markdown("### 🩺 Or Select from the List")
-            selected_display_symptoms = st.multiselect("", display_symptoms)
-            selected_symptoms = [symptom_display_to_actual[s] for s in selected_display_symptoms]
+            st.multiselect("", display_symptoms, key="selected_symptoms")
 
-    if "follow_up_index" not in st.session_state:
-        st.session_state.follow_up_index = 0
-    if "follow_up_answers" not in st.session_state:
-        st.session_state.follow_up_answers = []
-    if "follow_up_complete" not in st.session_state:
-        st.session_state.follow_up_complete = False
-    if "follow_up_triggered" not in st.session_state:
-        st.session_state.follow_up_triggered = False
-
+    # Predict button
     if st.button("💡 Predict Mental Health Condition"):
         st.session_state.follow_up_index = 0
         st.session_state.follow_up_answers = []
         st.session_state.follow_up_complete = False
+        st.session_state.cleared = False
+
+        user_input = st.session_state.user_input
+        selected_symptoms = st.session_state.selected_symptoms
 
         if user_input.strip() or selected_symptoms:
             typed_symptoms_raw = [s.strip().lower().replace("_", " ") for s in user_input.split(",") if s.strip()]
@@ -212,7 +231,6 @@ def fhome_show():
 
             matched = []
             unmatched = []
-
             for sym in all_entered:
                 if sym in normalized_column_map:
                     matched.append(normalized_column_map[sym])
@@ -240,18 +258,17 @@ def fhome_show():
         else:
             st.warning("⚠️ Please enter or select symptoms.")
 
-    if st.session_state.get("follow_up_triggered") and not st.session_state.get("cleared", False):
+    # Follow-up logic
+    if st.session_state.get("follow_up_triggered") and not st.session_state.get("cleared"):
         disease = st.session_state.get("predicted_disease")
         questions = follow_up_questions.get(disease, [])
 
         st.markdown(f"### 🧠 Follow-up Questions for **{disease}**")
 
-        # Display previously answered questions
         for i in range(len(st.session_state.follow_up_answers)):
             st.markdown(f"**Q{i + 1}:** {questions[i]}")
             st.markdown(f"**Answer:** {st.session_state.follow_up_answers[i]}")
 
-        # Ask the next unanswered question
         current_index = st.session_state.follow_up_index
         if current_index < len(questions):
             st.markdown(f"**Q{current_index + 1}:** {questions[current_index]}")
@@ -259,16 +276,15 @@ def fhome_show():
             if col1.button("✅ Yes", key=f"yes_{current_index}"):
                 st.session_state.follow_up_answers.append("Yes")
                 st.session_state.follow_up_index += 1
-                st.rerun()  # Rerun to refresh view with updated state
+                st.rerun()
             if col2.button("❌ No", key=f"no_{current_index}"):
                 st.session_state.follow_up_answers.append("No")
                 st.session_state.follow_up_index += 1
-                st.rerun()  # Rerun to refresh view with updated state
+                st.rerun()
 
-        # Final result once all questions are answered
         if len(st.session_state.follow_up_answers) == len(questions) and not st.session_state.follow_up_complete:
-            yes_count = st.session_state.follow_up_answers.count("Yes")
             st.session_state.follow_up_complete = True
+            yes_count = st.session_state.follow_up_answers.count("Yes")
 
             st.markdown("---")
             st.subheader("🧾 Predicted Result")
@@ -279,30 +295,21 @@ def fhome_show():
                 st.info(f"You may have some symptoms of **{disease}**, but further evaluation is recommended.")
 
             st.markdown("💡 _Note: This tool is informational. For real diagnosis, consult a professional._")
-            # ========== Precaution Lookup ==========
 
-            excel_path = os.path.join(base_dir,"..","datasets", "precaution_dataset.xlsx")
+            # Precaution retrieval
             precautions = []
+            excel_path = os.path.join(base_dir, "..", "datasets", "precaution_dataset.xlsx")
             try:
-                # Load workbook and worksheet
                 wb = load_workbook(excel_path)
                 ws = wb.active
-
-                # Collect all precautions that match the predicted condition
                 for row in ws.iter_rows(min_row=2, values_only=True):
                     disease_name, precaution_text = row[0], row[1]
-                    if disease_name and st.session_state.predicted_disease.strip().lower() == disease_name.strip().lower():
-
-                        if precaution_text and isinstance(precaution_text, str):
-                            precautions.append(precaution_text)
-
-            except FileNotFoundError:
-                st.warning("⚠️ The precaution Excel file was not found. Please check the path.")
+                    if disease_name and precaution_text and disease.strip().lower() == disease_name.strip().lower():
+                        precautions.append(precaution_text)
             except Exception as e:
-                st.error(f"❌ An error occurred while reading the Excel file: {e}")
+                st.warning(f"⚠️ Could not load precautions: {e}")
 
             st.markdown("---")
-            # Display the precautions
             st.subheader("📋 Precaution or Self-care Tips:")
             if precautions:
                 for i, tip in enumerate(precautions, 1):
@@ -310,15 +317,26 @@ def fhome_show():
             else:
                 st.info("No specific precautions found for this condition.")
 
-            # ========= Clear Button =========
-            if st.button("🔄 Clear"):
+            # Clear button
+            if st.button("🧹 Clear"):
+                st.session_state.follow_up_triggered = False
+                st.session_state.predicted_disease = None
                 st.session_state.follow_up_index = 0
                 st.session_state.follow_up_answers = []
                 st.session_state.follow_up_complete = False
-                st.session_state.follow_up_triggered = False
-                st.session_state.predicted_disease = ""
+                st.session_state.user_input = ""
+                st.session_state.selected_symptoms = []
+                st.session_state.cleared = True
+                st.rerun()
 
-                # Force rerun and skip all below
-                st.experimental_set_query_params(clear="1")  # optional: clear URL parameters
-                st.stop()  # ✅ stop Streamlit from continuing below this point
+            st.markdown(f"Do you want to know more about **{disease}**?")
+            col1, col2 = st.columns(2)
+            if col1.button("✅ Yes"):
+                st.session_state.follow_up_answers.append("Yes")
+                st.session_state.follow_up_index += 1
+                st.rerun()  # Rerun to refresh view with updated state
+            if col2.button("❌ No"):
+                st.session_state.follow_up_answers.append("No")
+                st.session_state.follow_up_index += 1
+                st.rerun()  # Rerun to refresh view with updated state
 
