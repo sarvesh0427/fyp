@@ -56,9 +56,11 @@ def fhome_show():
         "Every day may not be good... but there is something good in every day.",
         "Your present circumstances don’t determine where you can go; they merely determine where you start.",
         "Healing takes time, and that's okay.",
-        "You are enough, just as you are."
+        "You are enough, just as you are.",
+        "You alone are enough. You have nothing to prove to anybody",
+        "Healing grows in honesty, openness, and the courage to speak",
+        "Sometimes the people around you won't understand your journey",
     ]
-    st.info(f"*{random.choice(quotes)}*")
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     illness_data_path = os.path.join(base_dir, "..", "datasets", "illness_dataset.csv")
@@ -73,7 +75,7 @@ def fhome_show():
         <h2 style='text-align: center;'>🧠 Welcome to <span style='color: #3CB371;'>Mind Mantra</span></h2>
     """, unsafe_allow_html=True)
     st_lottie(lottie_mental, height=150, key="mental")
-
+    st.info(f"**{random.choice(quotes)}**")
     symptoms = df_ill.columns[1:]
     normalized_column_map = {col.replace("_", " ").lower(): col for col in symptoms}
 
@@ -176,7 +178,7 @@ def fhome_show():
         ]
     }
 
-    st.title("🧠 Mental Health Condition Predictor")
+    st.title(" Mental Health Condition Predictor")
     with st.container():
         left_column, right_column = st.columns(2)
         with left_column:
@@ -276,6 +278,7 @@ def fhome_show():
             else:
                 st.info(f"You may have some symptoms of **{disease}**, but further evaluation is recommended.")
 
+            st.markdown("💡 _Note: This tool is informational. For real diagnosis, consult a professional._")
             # ========== Precaution Lookup ==========
 
             excel_path = os.path.join(base_dir,"..","datasets", "precaution_dataset.xlsx")

@@ -5,6 +5,7 @@ import requests
 import random
 import os
 import pandas as pd
+from openpyxl import load_workbook
 
 # Get current file directory
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -19,7 +20,7 @@ mdl = joblib.load(model_path)
 le = joblib.load(encoder_path)
 symptoms = joblib.load(symptoms_path)
 
-def fhome_show():
+def home_show():
 
     def load_lottie_url(url: str):
         try:
@@ -86,24 +87,92 @@ def fhome_show():
 
     follow_up_questions = {
         "Depression": [
-            "Have you been feeling hopeless or helpless recently?",
-            "Have you been experiencing these symptoms for more than 2 weeks?"
+            "Have you been feeling down or sad most of the day for over 2 weeks?",
+            "Have you lost interest in activities you used to enjoy?",
+            "Do you feel tired or low in energy most days?"
         ],
         "Anxiety": [
-            "Do these symptoms interfere with your daily functioning?",
-            "Do you often feel restless or on edge?"
+            "Do you often feel nervous or on edge, even without a clear reason?",
+            "Is it hard to control your worrying?",
+            "Does your anxiety interfere with your sleep or daily activities?"
         ],
         "Bipolar Disorder": [
             "Have you experienced extreme mood swings recently?",
-            "Do you sometimes feel overly energetic and then extremely low?"
+            "Do you go through periods of high energy and impulsiveness, followed by deep sadness?",
+            "Have your sleep or thinking patterns changed drastically?"
         ],
-        "PTSD": [
-            "Did your symptoms start after a traumatic event?",
-            "Do you experience flashbacks or nightmares about the event?"
+        "Panic Disorder": [
+            "Do you experience sudden, intense fear that peaks in minutes?",
+            "Do you worry about having another panic attack?"
         ],
-        "OCD": [
-            "Do you feel compelled to repeat behaviors or thoughts frequently?",
-            "Do you find it hard to stop obsessive thinking or compulsive actions?"
+        "Schizophrenia": [
+            "Do you experience hallucinations (e.g., hearing voices) or delusions?",
+            "Have others noticed you acting in strange or disconnected ways?"
+        ],
+        "Eating Disorder": [
+            "Do you restrict food, binge eat, or purge to control your weight?",
+            "Are you overly concerned about body shape or weight?"
+        ],
+        "ADHD (Attention Deficit Hyperactivity Disorder)": [
+            "Do you have trouble focusing or staying organized?",
+            "Do you act impulsively or get distracted easily, even in quiet settings?"
+        ],
+        "Dissociative Identity Disorder": [
+            "Do you experience two or more identities or personality states?",
+            "Do you sometimes lose time or forget actions you've done?"
+        ],
+        "Substance Use Disorder": [
+            "Do you find it hard to stop using a substance, even if it causes problems?",
+            "Have you experienced tolerance or withdrawal?"
+        ],
+        "Obsessive-Compulsive Disorder (OCD)": [
+            "Do you have unwanted, intrusive thoughts that cause anxiety?",
+            "Do you perform rituals or repetitive actions to reduce the anxiety?"
+        ],
+        "Post-Traumatic Stress Disorder (PTSD)": [
+            "Have you experienced a traumatic event (e.g., accident, assault, disaster)?",
+            "Do you have nightmares, flashbacks, or avoid reminders of the trauma?"
+        ],
+        "Borderline Personality Disorder": [
+            "Do your emotions change rapidly, making it hard to maintain stable relationships?",
+            "Do you often feel empty or fear being abandoned?"
+        ],
+        "Social Anxiety Disorder": [
+            "Do you feel very anxious in social situations, like public speaking or being watched?",
+            "Do you often avoid social events because of fear of embarrassment?"
+        ],
+        "Generalized Anxiety Disorder (GAD)": [
+            "Have you experienced excessive worry about various things for 6 months or more?",
+            "Do you often feel restless, tired, or irritable?"
+        ],
+        "Adjustment Disorder": [
+            "Have your symptoms started after a major life change or stressful event?",
+            "Are these feelings beyond what you expected for the situation?"
+        ],
+        "Insomnia": [
+            "Do you have trouble falling or staying asleep, even when you're tired?",
+            "Does lack of sleep affect your energy, focus, or mood?"
+        ],
+        "Autism Spectrum Disorder": [
+            "Do you find it difficult to understand or respond to social cues?",
+            "Do you have strong interests in specific topics or routines?"
+        ],
+        "Persistent Depressive Disorder": [
+            "Have you felt consistently low or sad for more than 2 years?",
+            "Is your mood low but not severe enough to stop you from doing daily tasks?"
+        ],
+        "Major Depressive Disorder": [
+            "Are your depressive symptoms present almost every day?",
+            "Do you have difficulty concentrating or making decisions?",
+            "Have you had thoughts of self-harm or hopelessness?"
+        ],
+        "Separation Anxiety Disorder": [
+            "Do you feel intense fear when separated from someone you’re emotionally attached to?",
+            "Do you avoid being alone due to fear of separation?"
+        ],
+        "Dissociative Amnesia": [
+            "Do you have gaps in your memory, especially around stressful events?",
+            "Are you missing large parts of your personal history?"
         ]
     }
 
@@ -169,32 +238,84 @@ def fhome_show():
         else:
             st.warning("⚠️ Please enter or select symptoms.")
 
-    if st.session_state.get("follow_up_triggered"):
+    if st.session_state.get("follow_up_triggered") and not st.session_state.get("cleared", False):
         disease = st.session_state.get("predicted_disease")
         questions = follow_up_questions.get(disease, [])
 
         st.markdown(f"### 🧠 Follow-up Questions for **{disease}**")
 
-        for i, q in enumerate(questions):
-            if i < len(st.session_state.follow_up_answers):
-                answer = st.session_state.follow_up_answers[i]
-                st.markdown(f"**Q{i+1}:** {q}")
-                st.markdown(f"**Answer:** {answer}")
-            elif i == st.session_state.follow_up_index and not st.session_state.follow_up_complete:
-                st.markdown(f"**Q{i+1}:** {q}")
-                col1, col2 = st.columns(2)
-                if col1.button("✅ Yes", key=f"yes_{i}"):
-                    st.session_state.follow_up_answers.append("Yes")
-                    st.session_state.follow_up_index += 1
-                if col2.button("❌ No", key=f"no_{i}"):
-                    st.session_state.follow_up_answers.append("No")
-                    st.session_state.follow_up_index += 1
+        # Display previously answered questions
+        for i in range(len(st.session_state.follow_up_answers)):
+            st.markdown(f"**Q{i + 1}:** {questions[i]}")
+            st.markdown(f"**Answer:** {st.session_state.follow_up_answers[i]}")
 
+        # Ask the next unanswered question
+        current_index = st.session_state.follow_up_index
+        if current_index < len(questions):
+            st.markdown(f"**Q{current_index + 1}:** {questions[current_index]}")
+            col1, col2 = st.columns(2)
+            if col1.button("✅ Yes", key=f"yes_{current_index}"):
+                st.session_state.follow_up_answers.append("Yes")
+                st.session_state.follow_up_index += 1
+                st.rerun()  # Rerun to refresh view with updated state
+            if col2.button("❌ No", key=f"no_{current_index}"):
+                st.session_state.follow_up_answers.append("No")
+                st.session_state.follow_up_index += 1
+                st.rerun()  # Rerun to refresh view with updated state
+
+        # Final result once all questions are answered
         if len(st.session_state.follow_up_answers) == len(questions) and not st.session_state.follow_up_complete:
             yes_count = st.session_state.follow_up_answers.count("Yes")
             st.session_state.follow_up_complete = True
 
+            st.markdown("---")
+            st.subheader("🧾 Predicted Result")
+
             if yes_count >= len(questions) / 2:
                 st.success(f"Based on your responses, it's more likely you are suffering from **{disease}**.")
             else:
-                st.info(f"You may have symptoms of **{disease}**, but further evaluation is recommended.")
+                st.info(f"You may have some symptoms of **{disease}**, but further evaluation is recommended.")
+
+            # ========== Precaution Lookup ==========
+
+            excel_path = os.path.join(base_dir,"..","datasets", "precaution_dataset.xlsx")
+            precautions = []
+            try:
+                # Load workbook and worksheet
+                wb = load_workbook(excel_path)
+                ws = wb.active
+
+                # Collect all precautions that match the predicted condition
+                for row in ws.iter_rows(min_row=2, values_only=True):
+                    disease_name, precaution_text = row[0], row[1]
+                    if disease_name and st.session_state.predicted_disease.strip().lower() == disease_name.strip().lower():
+
+                        if precaution_text and isinstance(precaution_text, str):
+                            precautions.append(precaution_text)
+
+            except FileNotFoundError:
+                st.warning("⚠️ The precaution Excel file was not found. Please check the path.")
+            except Exception as e:
+                st.error(f"❌ An error occurred while reading the Excel file: {e}")
+
+            st.markdown("---")
+            # Display the precautions
+            st.subheader("📋 Precaution or Self-care Tips:")
+            if precautions:
+                for i, tip in enumerate(precautions, 1):
+                    st.markdown(f"**{i}.** {tip}")
+            else:
+                st.info("No specific precautions found for this condition.")
+
+            # ========= Clear Button =========
+            if st.button("🔄 Clear"):
+                st.session_state.follow_up_index = 0
+                st.session_state.follow_up_answers = []
+                st.session_state.follow_up_complete = False
+                st.session_state.follow_up_triggered = False
+                st.session_state.predicted_disease = ""
+
+                # Force rerun and skip all below
+                st.experimental_set_query_params(clear="1")  # optional: clear URL parameters
+                st.stop()  # ✅ stop Streamlit from continuing below this point
+

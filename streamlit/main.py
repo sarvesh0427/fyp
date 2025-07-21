@@ -3,7 +3,7 @@ import streamlit as st
 # Page configuration
 st.set_page_config(
     page_title="Mind Mantra",
-    page_icon="img1.png",
+    page_icon="streamlit/img1.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
