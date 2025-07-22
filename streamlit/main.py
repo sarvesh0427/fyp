@@ -77,7 +77,7 @@ button[kind="primary"]:hover {
 
 # Import your modules
 import home
-import fhome
+import thome
 import confession
 import about
 import base64
@@ -104,8 +104,8 @@ section = st.sidebar.radio("", ["🏠 Home", "📝 Anonymous Confession Wall", "
 
 # Section logic
 if section == "🏠 Home":
-    #home.home_show()
-    fhome.fhome_show()
+    home.home_show()
+    # thome.thome_show()
 elif section == "📝 Anonymous Confession Wall":
     confession.confess()
 elif section == "ℹ️ About":

@@ -7,6 +7,8 @@ import random
 import os
 import pandas as pd
 from openpyxl import load_workbook
+import ast
+from fuzzywuzzy import process  # for fuzzy matching
 
 # Get current file directory
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -20,6 +22,15 @@ symptoms_path = os.path.join(base_dir, "..", "model_training", "symptoms_list.jo
 mdl = joblib.load(model_path)
 le = joblib.load(encoder_path)
 symptoms = joblib.load(symptoms_path)
+
+def normalize_symptom(s):
+    return s.strip().lower().replace("_", " ")
+
+def get_closest_symptom(symptom, known_symptoms, threshold=80):
+    match = process.extractOne(symptom, known_symptoms)
+    if match and match[1] >= threshold:
+        return match[0]
+    return None
 
 def fhome_show():
 
@@ -73,7 +84,7 @@ def fhome_show():
     df_precaution['Disease'] = df_precaution['Disease'].str.lower().str.strip()
 
     st.markdown("""
-        <h2 style='text-align: center;'>🧠 Welcome to <span style='color: #3CB371;'>Mind Mantra</span></h2>
+        <h2 style='text-align: center;'> Welcome to <span style='color: #3CB371;'>Mind Mantra</span></h2>
     """, unsafe_allow_html=True)
     st_lottie(lottie_mental, height=150, key="mental")
     st.markdown(
@@ -86,6 +97,7 @@ def fhome_show():
     )
     symptoms = df_ill.columns[1:]
     normalized_column_map = {col.replace("_", " ").lower(): col for col in symptoms}
+    all_normalized = list(normalized_column_map.keys())
 
     similar_name_map = {}
     for _, row in df_sim.iterrows():
@@ -95,100 +107,16 @@ def fhome_show():
                 key = str(alt_name).strip().lower().replace("_", " ")
                 similar_name_map[key] = actual_symptom
 
+    followup_path = os.path.join(base_dir, "..", "datasets", "followup_dataset.csv")
+    df_followup = pd.read_csv(followup_path)
+    df_followup['followup_questions'] = df_followup['followup_questions'].apply(ast.literal_eval)
     follow_up_questions = {
-        "Depression": [
-            "Have you been feeling down or sad most of the day for over 2 weeks?",
-            "Have you lost interest in activities you used to enjoy?",
-            "Do you feel tired or low in energy most days?"
-        ],
-        "Anxiety": [
-            "Do you often feel nervous or on edge, even without a clear reason?",
-            "Is it hard to control your worrying?",
-            "Does your anxiety interfere with your sleep or daily activities?"
-        ],
-        "Bipolar Disorder": [
-            "Have you experienced extreme mood swings recently?",
-            "Do you go through periods of high energy and impulsiveness, followed by deep sadness?",
-            "Have your sleep or thinking patterns changed drastically?"
-        ],
-        "Panic Disorder": [
-            "Do you experience sudden, intense fear that peaks in minutes?",
-            "Do you worry about having another panic attack?"
-        ],
-        "Schizophrenia": [
-            "Do you experience hallucinations (e.g., hearing voices) or delusions?",
-            "Have others noticed you acting in strange or disconnected ways?"
-        ],
-        "Eating Disorder": [
-            "Do you restrict food, binge eat, or purge to control your weight?",
-            "Are you overly concerned about body shape or weight?"
-        ],
-        "ADHD (Attention Deficit Hyperactivity Disorder)": [
-            "Do you have trouble focusing or staying organized?",
-            "Do you act impulsively or get distracted easily, even in quiet settings?"
-        ],
-        "Dissociative Identity Disorder": [
-            "Do you experience two or more identities or personality states?",
-            "Do you sometimes lose time or forget actions you've done?"
-        ],
-        "Substance Use Disorder": [
-            "Do you find it hard to stop using a substance, even if it causes problems?",
-            "Have you experienced tolerance or withdrawal?"
-        ],
-        "Obsessive-Compulsive Disorder (OCD)": [
-            "Do you have unwanted, intrusive thoughts that cause anxiety?",
-            "Do you perform rituals or repetitive actions to reduce the anxiety?"
-        ],
-        "Post-Traumatic Stress Disorder (PTSD)": [
-            "Have you experienced a traumatic event (e.g., accident, assault, disaster)?",
-            "Do you have nightmares, flashbacks, or avoid reminders of the trauma?"
-        ],
-        "Borderline Personality Disorder": [
-            "Do your emotions change rapidly, making it hard to maintain stable relationships?",
-            "Do you often feel empty or fear being abandoned?"
-        ],
-        "Social Anxiety Disorder": [
-            "Do you feel very anxious in social situations, like public speaking or being watched?",
-            "Do you often avoid social events because of fear of embarrassment?"
-        ],
-        "Generalized Anxiety Disorder (GAD)": [
-            "Have you experienced excessive worry about various things for 6 months or more?",
-            "Do you often feel restless, tired, or irritable?"
-        ],
-        "Adjustment Disorder": [
-            "Have your symptoms started after a major life change or stressful event?",
-            "Are these feelings beyond what you expected for the situation?"
-        ],
-        "Insomnia": [
-            "Do you have trouble falling or staying asleep, even when you're tired?",
-            "Does lack of sleep affect your energy, focus, or mood?"
-        ],
-        "Autism Spectrum Disorder": [
-            "Do you find it difficult to understand or respond to social cues?",
-            "Do you have strong interests in specific topics or routines?"
-        ],
-        "Persistent Depressive Disorder": [
-            "Have you felt consistently low or sad for more than 2 years?",
-            "Is your mood low but not severe enough to stop you from doing daily tasks?"
-        ],
-        "Major Depressive Disorder": [
-            "Are your depressive symptoms present almost every day?",
-            "Do you have difficulty concentrating or making decisions?",
-            "Have you had thoughts of self-harm or hopelessness?"
-        ],
-        "Separation Anxiety Disorder": [
-            "Do you feel intense fear when separated from someone you’re emotionally attached to?",
-            "Do you avoid being alone due to fear of separation?"
-        ],
-        "Dissociative Amnesia": [
-            "Do you have gaps in your memory, especially around stressful events?",
-            "Are you missing large parts of your personal history?"
-        ]
+        row['predicted_condition'].strip().lower(): row['followup_questions']
+        for _, row in df_followup.iterrows()
     }
 
-    st.title("🧠 Mental Health Condition Predictor")
+    st.header(" Mental Health Condition Predictor")
 
-    # Default session state
     for key, default in {
         "follow_up_index": 0,
         "follow_up_answers": [],
@@ -201,7 +129,6 @@ def fhome_show():
         if key not in st.session_state:
             st.session_state[key] = default
 
-    # Input container
     with st.container():
         left_column, right_column = st.columns(2)
         with left_column:
@@ -210,11 +137,9 @@ def fhome_show():
 
         with right_column:
             display_symptoms = [s.replace("_", " ") for s in symptoms]
-            symptom_display_to_actual = dict(zip(display_symptoms, symptoms))
             st.markdown("### 🩺 Or Select from the List")
             st.multiselect("", display_symptoms, key="selected_symptoms")
 
-    # Predict button
     if st.button("💡 Predict Mental Health Condition"):
         st.session_state.follow_up_index = 0
         st.session_state.follow_up_answers = []
@@ -225,19 +150,23 @@ def fhome_show():
         selected_symptoms = st.session_state.selected_symptoms
 
         if user_input.strip() or selected_symptoms:
-            typed_symptoms_raw = [s.strip().lower().replace("_", " ") for s in user_input.split(",") if s.strip()]
-            selected_symptoms_raw = [s.replace("_", " ").lower() for s in selected_symptoms]
+            typed_symptoms_raw = [normalize_symptom(s) for s in user_input.split(",") if s.strip()]
+            selected_symptoms_raw = [normalize_symptom(s) for s in selected_symptoms]
             all_entered = list(set(typed_symptoms_raw + selected_symptoms_raw))
 
-            matched = []
-            unmatched = []
+            matched, unmatched, corrected = [], [], []
             for sym in all_entered:
                 if sym in normalized_column_map:
                     matched.append(normalized_column_map[sym])
                 elif sym in similar_name_map:
                     matched.append(similar_name_map[sym])
                 else:
-                    unmatched.append(sym)
+                    closest = get_closest_symptom(sym, all_normalized)
+                    if closest:
+                        corrected.append((sym, closest))
+                        matched.append(normalized_column_map[closest])
+                    else:
+                        unmatched.append(sym)
 
             if len(matched) < 6:
                 st.warning("⚠️ Please enter or select at least 6 valid symptoms.")
@@ -247,7 +176,7 @@ def fhome_show():
                 predicted_disease = le.inverse_transform([prediction])[0]
                 st.session_state.predicted_disease = predicted_disease
 
-                if predicted_disease in follow_up_questions:
+                if predicted_disease.lower() in follow_up_questions:
                     st.session_state.follow_up_triggered = True
                 else:
                     st.success(f"Predicted mental health condition: **{predicted_disease}**")
@@ -255,6 +184,9 @@ def fhome_show():
 
             if unmatched:
                 st.warning("⚠️ Unrecognized symptoms: " + ", ".join(unmatched))
+            if corrected:
+                for wrong, fixed in corrected:
+                    st.info(f"✅ Interpreted '{wrong}' as '{fixed}'")
         else:
             st.warning("⚠️ Please enter or select symptoms.")
 
@@ -263,11 +195,15 @@ def fhome_show():
         disease = st.session_state.get("predicted_disease")
         questions = follow_up_questions.get(disease, [])
 
-        st.markdown(f"### 🧠 Follow-up Questions for **{disease}**")
+        st.markdown(f"### Follow-up Questions for **{disease}**")
 
         for i in range(len(st.session_state.follow_up_answers)):
-            st.markdown(f"**Q{i + 1}:** {questions[i]}")
-            st.markdown(f"**Answer:** {st.session_state.follow_up_answers[i]}")
+            if i < len(questions):
+                st.markdown(f"**Q{i + 1}:** {questions[i]}")
+                st.markdown(f"**Answer:** {st.session_state.follow_up_answers[i]}")
+            else:
+                # If answers exist but questions don't (unexpected), just show answer
+                st.markdown(f"**Answer {i + 1}:** {st.session_state.follow_up_answers[i]}")
 
         current_index = st.session_state.follow_up_index
         if current_index < len(questions):

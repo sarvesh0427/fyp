@@ -36,7 +36,7 @@ def get_closest_symptom(symptom, known_symptoms, threshold=80):
         return match[0]
     return None
 
-def home_show():
+def thome_show():
 
     def load_lottie_url(url: str):
         try:
