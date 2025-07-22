@@ -50,6 +50,11 @@ def home_show():
     lottie_mental = load_lottie_url("https://assets9.lottiefiles.com/packages/lf20_jcikwtux.json")
 
     st.markdown("""
+            <h2 style='text-align: center;'> Welcome to <span style='color: #3CB371;'>Mind Mantra</span></h2>
+        """, unsafe_allow_html=True)
+    st_lottie(lottie_mental, height=150, key="mental")
+
+    st.markdown("""
         <style>
         div.stButton > button:first-child {
             background-color: #a8d5ba;
@@ -87,10 +92,6 @@ def home_show():
     df_precaution = pd.read_csv(precaution_path, encoding='ISO-8859-1')
     df_precaution['Disease'] = df_precaution['Disease'].str.lower().str.strip()
 
-    st.markdown("""
-        <h2 style='text-align: center;'> Welcome to <span style='color: #3CB371;'>Mind Mantra</span></h2>
-    """, unsafe_allow_html=True)
-    st_lottie(lottie_mental, height=150, key="mental")
     st.markdown(
         f"""
         <div style='text-align: center; font-size: 18px; color: #2E8B57; background-color: #E0F8E0; padding: 10px; border-radius: 10px;'>
@@ -259,8 +260,8 @@ def home_show():
                     else:
                         unmatched.append(sym)
 
-            if len(matched) < 6:
-                st.warning("⚠️ Please enter or select at least 6 valid symptoms.")
+            if len(matched) < 7:
+                st.warning("⚠️ Please enter or select at least 7 valid symptoms.")
             else:
                 input_vector = [1 if symptom in matched else 0 for symptom in symptoms]
                 prediction = mdl.predict([input_vector])[0]
@@ -332,6 +333,7 @@ def home_show():
             st.markdown("💡 _Note: This tool is informational. For real diagnosis, consult a professional._")
 
             # Show precaution tips
+            # Load precautions from Excel
             precautions = []
             excel_path = os.path.join(base_dir, "..", "datasets", "precaution_dataset.xlsx")
             try:
@@ -343,11 +345,35 @@ def home_show():
             except Exception as e:
                 st.warning(f"⚠️ Could not load precautions: {e}")
 
+            # UI Section
             st.markdown("---")
             st.subheader("📋 Precaution or Self-care Tips:")
+
             if precautions:
-                for i, tip in enumerate(precautions, 1):
+                # Initialize toggle state
+                if "show_all_precautions" not in st.session_state:
+                    st.session_state.show_all_precautions = False
+
+                # Decide how many to show
+                if st.session_state.show_all_precautions:
+                    to_show = precautions
+                else:
+                    to_show = precautions[:6]
+
+                # Display tips
+                for i, tip in enumerate(to_show, 1):
                     st.markdown(f"**{i}.** {tip}")
+
+                # Show toggle button only if more than 6 tips exist
+                if len(precautions) > 6:
+                    if st.session_state.show_all_precautions:
+                        if st.button("🔼 Show Less"):
+                            st.session_state.show_all_precautions = False
+                            st.rerun()
+                    else:
+                        if st.button("🔽Show More"):
+                            st.session_state.show_all_precautions = True
+                            st.rerun()
             else:
                 st.info("No specific precautions found for this condition.")
 
