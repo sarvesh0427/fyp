@@ -70,14 +70,16 @@ import confession
 import about
 import base64
 from io import BytesIO
-
+import os
+base_dir = os.path.dirname(os.path.abspath(__file__))
+image_path = os.path.join(base_dir, "img1.png")
 # def image_to_base64(img):
 #     buffered = BytesIO()
 #     img.save(buffered, format="PNG")
 #     return base64.b64encode(buffered.getvalue()).decode()
 
 # Sidebar navigation
-image = Image.open(r'C:\DriveD\fyp\streamlit\img1.png')
+image = Image.open(image_path)
 image = image.resize((120, 120))
 buffered = BytesIO()
 image.save(buffered, format="PNG")
