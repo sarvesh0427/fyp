@@ -77,7 +77,7 @@ def image_to_base64(img):
     return base64.b64encode(buffered.getvalue()).decode()
 
 # Sidebar navigation
-image = Image.open('streamlit/img1.png')
+image = Image.open(r'C:\DriveD\fyp\streamlit\img1.png')
 image = image.resize((120, 120))
 st.sidebar.markdown(
     f"""

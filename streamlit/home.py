@@ -1,13 +1,9 @@
 import streamlit as st
 import joblib
-from streamlit_lottie import st_lottie
-import requests
-import random
 import os
 import pandas as pd
 from openpyxl import load_workbook
 from fuzzywuzzy import process
-import time
 from streamlit_autorefresh import st_autorefresh
 
 # Get current file directory
@@ -53,7 +49,7 @@ def home_show():
             "Sometimes the people around you won't understand your journey",
         ]
         if not st.session_state.started_input:
-            st_autorefresh(interval=15 * 1000, limit=None, key="quote_autorefresh")
+            st_autorefresh(interval=20 * 1000, limit=None, key="quote_autorefresh")
 
             if "quote_index" not in st.session_state:
                 st.session_state.quote_index = 0
