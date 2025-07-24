@@ -71,18 +71,21 @@ import about
 import base64
 from io import BytesIO
 
-def image_to_base64(img):
-    buffered = BytesIO()
-    img.save(buffered, format="PNG")
-    return base64.b64encode(buffered.getvalue()).decode()
+# def image_to_base64(img):
+#     buffered = BytesIO()
+#     img.save(buffered, format="PNG")
+#     return base64.b64encode(buffered.getvalue()).decode()
 
 # Sidebar navigation
 image = Image.open(r'C:\DriveD\fyp\streamlit\img1.png')
 image = image.resize((120, 120))
+buffered = BytesIO()
+image.save(buffered, format="PNG")
+img_base64 = base64.b64encode(buffered.getvalue()).decode()
 st.sidebar.markdown(
     f"""
-    <div style='text-align: center;'>
-        <img src="data:image/png;base64,{image_to_base64(image)}" width="120"/>
+    <div style='text-align: center; margin-bottom: 10px;'>
+        <img src="data:image/png;base64,{img_base64}" width="120"/>
     </div>
     """,
     unsafe_allow_html=True
