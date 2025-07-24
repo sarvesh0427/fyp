@@ -7,12 +7,8 @@ import os
 import pandas as pd
 from openpyxl import load_workbook
 from fuzzywuzzy import process
-
-def reset_all_states():
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.rerun()
-
+import time
+from streamlit_autorefresh import st_autorefresh
 
 # Get current file directory
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,61 +23,115 @@ mdl = joblib.load(model_path)
 le = joblib.load(encoder_path)
 symptoms = joblib.load(symptoms_path)
 
-def normalize_symptom(s):
-    return s.strip().lower().replace("_", " ")
-
-def get_closest_symptom(symptom, known_symptoms, threshold=80):
-    match = process.extractOne(symptom, known_symptoms)
-    if match and match[1] >= threshold:
-        return match[0]
-    return None
-
 def home_show():
+    def reset_all_states():
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.rerun()
+    if "started_input" not in st.session_state:
+        st.session_state.started_input = False
 
-    def load_lottie_url(url: str):
-        try:
-            r = requests.get(url, timeout=5)
-            if r.status_code == 200:
-                return r.json()
-        except:
-            pass
+    def normalize_symptom(s):
+        return s.strip().lower().replace("_", " ")
+
+    def get_closest_symptom(symptom, known_symptoms, threshold=80):
+        match = process.extractOne(symptom, known_symptoms)
+        if match and match[1] >= threshold:
+            return match[0]
         return None
 
-    lottie_mental = load_lottie_url("https://assets9.lottiefiles.com/packages/lf20_jcikwtux.json")
+    # Upper section (just ui)
+    if not st.session_state.started_input:
+        quotes = [
+            "Believe you can and you're halfway there.",
+            "Every day may not be good... but there is something good in every day.",
+            "Your present circumstances don’t determine where you can go; they merely determine where you start.",
+            "Healing takes time, and that's okay.",
+            "You are enough, just as you are.",
+            "You alone are enough. You have nothing to prove to anybody",
+            "Healing grows in honesty, openness, and the courage to speak",
+            "Sometimes the people around you won't understand your journey",
+        ]
+        if not st.session_state.started_input:
+            st_autorefresh(interval=15 * 1000, limit=None, key="quote_autorefresh")
 
-    st.markdown("""
-            <h2 style='text-align: center;'> Welcome to <span style='color: #3CB371;'>Mind Mantra</span></h2>
+            if "quote_index" not in st.session_state:
+                st.session_state.quote_index = 0
+
+            st.session_state.quote_index = (st.session_state.quote_index + 1) % len(quotes)
+            current_quote = quotes[st.session_state.quote_index]
+
+            st.markdown(
+                f"""
+                <div style='
+                    text-align: center;
+                    font-size: 18px;
+                    color: #2E8B57;
+                    background-color: #E0F8E0;
+                    padding: 10px;
+                    border-radius: 10px;
+                    margin-top: -90px;  /* Move upward by 20px */
+                '>
+                    <strong>{current_quote}</strong>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        st.markdown("""
+            <style>
+            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap');
+
+            .header-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                margin-top: -50px;   /* reduced top margin here */
+                padding: 20px;
+                font-family: 'Montserrat', sans-serif;
+                text-align: center;
+                animation: fadeIn 5s ease-in-out;
+            }
+
+            .welcome-text {
+                font-size: 2rem;
+                color: #555;
+                margin: 0;
+                font-weight: 500;
+            }
+
+            .app-name {
+                font-size: 4rem;
+                background: linear-gradient(90deg, #3CB371, #2E8B57);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                font-weight: 700;
+                margin: 0;
+                line-height: 1.1;
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-15px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+
+            @media screen and (max-width: 768px) {
+                .welcome-text {
+                    font-size: 1.5rem;
+                }
+                .app-name {
+                    font-size: 2.5rem;
+                }
+            }
+            </style>
+
+            <div class="header-container">
+                <div class="welcome-text">Welcome to</div>
+                <div class="app-name">Mind Mantra</div>
+            </div>
         """, unsafe_allow_html=True)
-    st_lottie(lottie_mental, height=150, key="mental")
 
-    st.markdown("""
-        <style>
-        div.stButton > button:first-child {
-            background-color: #a8d5ba;
-            color: black;
-            border: none;
-            border-radius: 8px;
-            padding: 0.5em 1em;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
-        }
-        div.stButton > button:first-child:hover {
-            background-color: #94c9aa;
-            color: white;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    quotes = [
-        "Believe you can and you're halfway there.",
-        "Every day may not be good... but there is something good in every day.",
-        "Your present circumstances don’t determine where you can go; they merely determine where you start.",
-        "Healing takes time, and that's okay.",
-        "You are enough, just as you are.",
-        "You alone are enough. You have nothing to prove to anybody",
-        "Healing grows in honesty, openness, and the courage to speak",
-        "Sometimes the people around you won't understand your journey",
-    ]
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     illness_data_path = os.path.join(base_dir, "..", "datasets", "illness_dataset.csv")
@@ -92,14 +142,7 @@ def home_show():
     df_precaution = pd.read_csv(precaution_path, encoding='ISO-8859-1')
     df_precaution['Disease'] = df_precaution['Disease'].str.lower().str.strip()
 
-    st.markdown(
-        f"""
-        <div style='text-align: center; font-size: 18px; color: #2E8B57; background-color: #E0F8E0; padding: 10px; border-radius: 10px;'>
-            <strong>{random.choice(quotes)}</strong>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+
     symptoms = df_ill.columns[1:]
     normalized_column_map = {col.replace("_", " ").lower(): col for col in symptoms}
     all_normalized = list(normalized_column_map.keys())
@@ -115,91 +158,87 @@ def home_show():
     follow_up_questions = {
         "Depression": [
             "Have you been feeling down or sad most of the day for over 2 weeks?",
-            "Have you lost interest in activities you used to enjoy?",
-            "Do you feel tired or low in energy most days?"
+            "Are your daily responsibilities harder to manage because of these feelings?"
         ],
         "Anxiety": [
             "Do you often feel nervous or on edge, even without a clear reason?",
             "Is it hard to control your worrying?",
-            "Does your anxiety interfere with your sleep or daily activities?"
         ],
         "Bipolar Disorder": [
             "Have you experienced extreme mood swings recently?",
-            "Do you go through periods of high energy and impulsiveness, followed by deep sadness?",
-            "Have your sleep or thinking patterns changed drastically?"
+            "Have these shifts affected your work, finances, or relationships?"
         ],
         "Panic Disorder": [
-            "Do you experience sudden, intense fear that peaks in minutes?",
-            "Do you worry about having another panic attack?"
+            "Have you had multiple panic attacks over the past month?",
+            "Do you avoid situations or places out of fear of having an attack?"
         ],
         "Schizophrenia": [
-            "Do you experience hallucinations (e.g., hearing voices) or delusions?",
-            "Have others noticed you acting in strange or disconnected ways?"
+            "Have unusual thoughts or perceptions persisted for over a month?",
+            "Have these experiences disrupted your work or personal life?"
         ],
         "Eating Disorder": [
-            "Do you restrict food, binge eat, or purge to control your weight?",
-            "Are you overly concerned about body shape or weight?"
+            "Have you been concerned about food or body image for several months?",
+            "Is your eating behavior affecting your health or daily functioning?"
         ],
         "ADHD (Attention Deficit Hyperactivity Disorder)": [
-            "Do you have trouble focusing or staying organized?",
-            "Do you act impulsively or get distracted easily, even in quiet settings?"
+            "Have you struggled with attention or hyperactivity since childhood?",
+            "Do these difficulties impact your school, job, or daily activities?"
         ],
         "Dissociative Identity Disorder": [
-            "Do you experience two or more identities or personality states?",
-            "Do you sometimes lose time or forget actions you've done?"
+            "Have you felt like multiple identities or memory gaps have persisted over weeks or months?",
+            "Have these experiences disrupted your daily life or relationships?"
         ],
         "Substance Use Disorder": [
-            "Do you find it hard to stop using a substance, even if it causes problems?",
-            "Have you experienced tolerance or withdrawal?"
+            "Have you been using substances regularly for over a month?",
+            "Has substance use interfered with your responsibilities or relationships?"
         ],
         "Obsessive-Compulsive Disorder (OCD)": [
-            "Do you have unwanted, intrusive thoughts that cause anxiety?",
-            "Do you perform rituals or repetitive actions to reduce the anxiety?"
+            "Have your unwanted thoughts or rituals lasted more than an hour a day for over two weeks?",
+            "Do they interfere with your ability to focus or get things done?"
         ],
         "Post-Traumatic Stress Disorder (PTSD)": [
-            "Have you experienced a traumatic event (e.g., accident, assault, disaster)?",
-            "Do you have nightmares, flashbacks, or avoid reminders of the trauma?"
+            "Have you had distressing memories or reactions for more than a month after a traumatic event?",
+            "Has this trauma affected your relationships or ability to concentrate?"
         ],
         "Borderline Personality Disorder": [
-            "Do your emotions change rapidly, making it hard to maintain stable relationships?",
-            "Do you often feel empty or fear being abandoned?"
+            "Have your emotional struggles lasted for several months or longer?",
+            "Have your intense emotions or relationships caused problems at work or home?"
         ],
         "Social Anxiety Disorder": [
-            "Do you feel very anxious in social situations, like public speaking or being watched?",
-            "Do you often avoid social events because of fear of embarrassment?"
+            "Have you been avoiding social situations for six months or more?",
+            "Has this anxiety made it difficult to go to work or school?"
         ],
         "Generalized Anxiety Disorder (GAD)": [
             "Have you experienced excessive worry about various things for 6 months or more?",
-            "Do you often feel restless, tired, or irritable?"
+            "Has this worry made it difficult to focus or enjoy life?"
         ],
         "Adjustment Disorder": [
-            "Have your symptoms started after a major life change or stressful event?",
-            "Are these feelings beyond what you expected for the situation?"
+            "Did your emotional symptoms begin soon after a specific stressor or change?",
+            "Is the stress still affecting your ability to function or move forward?"
         ],
         "Insomnia": [
-            "Do you have trouble falling or staying asleep, even when you're tired?",
-            "Does lack of sleep affect your energy, focus, or mood?"
+            "Have you had trouble sleeping at least three nights a week for the past month?",
+            "Does your poor sleep affect your energy or concentration during the day?"
         ],
         "Autism Spectrum Disorder": [
-            "Do you find it difficult to understand or respond to social cues?",
-            "Do you have strong interests in specific topics or routines?"
+            "Have you experienced social or communication challenges since early childhood?",
+            "Do these challenges affect your ability to connect with others or work independently?"
         ],
         "Persistent Depressive Disorder": [
-            "Have you felt consistently low or sad for more than 2 years?",
-            "Is your mood low but not severe enough to stop you from doing daily tasks?"
+            "Have you felt low or hopeless for more days than not for over two years?",
+            "Are these long-term feelings making everyday life harder to manage?"
         ],
         "Major Depressive Disorder": [
-            "Are your depressive symptoms present almost every day?",
-            "Do you have difficulty concentrating or making decisions?",
-            "Have you had thoughts of self-harm or hopelessness?"
+            "Have you felt down or unmotivated for more than two weeks?",
+            "Have these feelings made it hard to complete everyday tasks?"
         ],
         "Separation Anxiety Disorder": [
-            "Do you feel intense fear when separated from someone you’re emotionally attached to?",
-            "Do you avoid being alone due to fear of separation?"
+            "Have you felt extreme distress when away from someone for over four weeks?",
+            "Has this fear kept you from going places or being independent?"
         ],
         "Dissociative Amnesia": [
-            "Do you have gaps in your memory, especially around stressful events?",
-            "Are you missing large parts of your personal history?"
+            "Has the memory loss lasted more than a few hours or days?",
+            "Is it interfering with your ability to function or feel safe?"
         ]
     }
 
@@ -226,9 +265,28 @@ def home_show():
             st.text_area("", key="user_input", placeholder="e.g., sleep disturbance, irritability, dizziness...")
 
         with right_column:
-            display_symptoms = [s.replace("_", " ") for s in symptoms]
-            st.markdown("### 🩺 Or Select from the List")
-            st.multiselect("", display_symptoms, key="selected_symptoms")
+            # st.markdown("### Follow the instructions")
+            st.markdown(
+                """
+                <div style='
+                    background-color: #f0f9f4;
+                    color: #2E8B57;
+                    padding: 20px;
+                    border-radius: 12px;
+                    font-size: 16px;
+                    text-align: left;
+                    margin-top: 20px;
+                '>
+                    <p>📋 <strong>Follow the Instructions Below:</strong></p>
+                    <ul style="padding-left: 20px; margin: 0;">
+                        <li>📝 <strong>Enter at least 7 symptoms</strong> (e.g., sleep disturbance, anxiety, dizziness...)</li>
+                        <li>💡 Click the <strong>'Predict Mental Health Condition'</strong> button to continue</li>
+                        <li>🔍 Answer follow-up questions to receive helpful tips and condition insights</li>
+                    </ul>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
     # Predict button
     if st.button("💡 Predict Mental Health Condition"):
@@ -332,7 +390,6 @@ def home_show():
 
             st.markdown("💡 _Note: This tool is informational. For real diagnosis, consult a professional._")
 
-            # Show precaution tips
             # Load precautions from Excel
             precautions = []
             excel_path = os.path.join(base_dir, "..", "datasets", "precaution_dataset.xlsx")
@@ -381,14 +438,4 @@ def home_show():
             if st.button("🔄 Clear"):
                 reset_all_states()
 
-            # st.markdown(f"Do you want to know more about **{disease}**?")
-            # col1, col2 = st.columns(2)
-            # if col1.button("✅ Yes"):
-            #     st.session_state.follow_up_answers.append("Yes")
-            #     st.session_state.follow_up_index += 1
-            #     st.rerun()  # Rerun to refresh view with updated state
-            # if col2.button("❌ No"):
-            #     st.session_state.follow_up_answers.append("No")
-            #     st.session_state.follow_up_index += 1
-            #     st.rerun()  # Rerun to refresh view with updated state
 

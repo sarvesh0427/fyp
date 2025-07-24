@@ -6,73 +6,61 @@ st.set_page_config(
     page_title="Mind Mantra",
     page_icon="streamlit/img1.png",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto"
 )
 
-# Apply custom styles for UI/UX with bold sidebar font
 st.markdown("""
-<style>
-/* General font */
-html, body, [class*="css"] {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 16px;
-}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Sidebar background /
+        [data-testid="stSidebar"] {
+            background-color: #f0f2f6 !important; / dark green /
+        }
 
-/* Sidebar container */
-[data-testid="stSidebar"] {
-    background-color: #3CB371;
-    padding: 20px 15px;
-    border-radius: 0px 10px 10px 0px;
-}
+        / Custom navigation styles /
+        .sidebar-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: white !important;
+            margin-bottom: 20px;
+        }
 
-/* Sidebar text - titles, labels, spans, radio text */
-[data-testid="stSidebar"] * {
-    color: white !important;
-    font-weight: bold !important;
-}
+        /* Sidebar container */
+        [data-testid="stSidebar"] {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 20px 15px;
+            border-radius: 0px 10px 10px 0px;
+            width: 500px !important;
+            max-width: 400px !important;  /* Adjust as needed */
+            min-width: 200px !important;  /* Prevent too small */
+            flex-shrink: 1 !important;
+           }
 
-/* Sidebar radio buttons */
-.css-1v0mbdj > div > div {
-    background-color: white;
-    border-radius: 10px;
-    padding: 6px 10px;
-    margin: 5px 0;
-    transition: all 0.3s ease;
-    font-weight: bold;
-    color: #3CB371;
-}
-.css-1v0mbdj > div > div:hover {
-    background-color: #2E8B57;
-    color: white;
-}
+        .sidebar-link {
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            background-color: #32CD32; / light green /
+            color: white !important;
+            text-decoration: none !important;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
 
-/* Main App Background */
-.stApp {
-    background-color: #f9f9f9;
-    padding: 1rem;
-}
+        .sidebar-link i {
+            margin-right: 10px;
+        }
 
-/* Footer */
-footer, footer p {
-    text-align: center;
-    font-size: 14px;
-    color: #888;
-}
-
-/* Buttons */
-button[kind="primary"] {
-    background-color: #3CB371 !important;
-    color: white !important;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-weight: bold;
-    transition: all 0.2s ease-in-out;
-}
-button[kind="primary"]:hover {
-    background-color: #2E8B57 !important;
-    transform: scale(1.03);
-}
-</style>
+        .sidebar-link:hover {
+            background-color: #2a9e2a;  / darker green */
+            transform: translateX(4px);
+            cursor: pointer;
+        }
+    </style>
 """, unsafe_allow_html=True)
 
 # Import your modules
@@ -101,10 +89,11 @@ st.sidebar.markdown(
 )
 
 section = st.sidebar.radio("", ["🏠 Home", "📝 Anonymous Confession Wall", "ℹ️ About"])
-
+# import fhome
 # Section logic
 if section == "🏠 Home":
     home.home_show()
+    # fhome.fhome_show()
     # thome.thome_show()
 elif section == "📝 Anonymous Confession Wall":
     confession.confess()

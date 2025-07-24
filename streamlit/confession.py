@@ -137,7 +137,7 @@ def show_admin_panel():
 
 def safe_rerun():
     try:
-        st.experimental_rerun()
+        st.rerun()
     except AttributeError:
         st.stop()
 
