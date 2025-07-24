@@ -13,3 +13,4 @@ streamlit-lottie
 openpyxl
 pymongo
 fuzzywuzzy
+streamlit_autorefresh
