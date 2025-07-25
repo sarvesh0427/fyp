@@ -5,6 +5,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from fuzzywuzzy import process
 from streamlit_autorefresh import st_autorefresh
+from follow_ups import follow_up_questions
 
 # Get current file directory
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -151,92 +152,7 @@ def home_show():
                 key = str(alt_name).strip().lower().replace("_", " ")
                 similar_name_map[key] = actual_symptom
 
-    follow_up_questions = {
-        "Depression": [
-            "Have you been feeling down or sad most of the day for over 2 weeks?",
-            "Are your daily responsibilities harder to manage because of these feelings?"
-        ],
-        "Anxiety": [
-            "Do you often feel nervous or on edge, even without a clear reason?",
-            "Is it hard to control your worrying?",
-        ],
-        "Bipolar Disorder": [
-            "Have you experienced extreme mood swings recently?",
-            "Have these shifts affected your work, finances, or relationships?"
-        ],
-        "Panic Disorder": [
-            "Have you had multiple panic attacks over the past month?",
-            "Do you avoid situations or places out of fear of having an attack?"
-        ],
-        "Schizophrenia": [
-            "Have unusual thoughts or perceptions persisted for over a month?",
-            "Have these experiences disrupted your work or personal life?"
-        ],
-        "Eating Disorder": [
-            "Have you been concerned about food or body image for several months?",
-            "Is your eating behavior affecting your health or daily functioning?"
-        ],
-        "ADHD (Attention Deficit Hyperactivity Disorder)": [
-            "Have you struggled with attention or hyperactivity since childhood?",
-            "Do these difficulties impact your school, job, or daily activities?"
-        ],
-        "Dissociative Identity Disorder": [
-            "Have you felt like multiple identities or memory gaps have persisted over weeks or months?",
-            "Have these experiences disrupted your daily life or relationships?"
-        ],
-        "Substance Use Disorder": [
-            "Have you been using substances regularly for over a month?",
-            "Has substance use interfered with your responsibilities or relationships?"
-        ],
-        "Obsessive-Compulsive Disorder (OCD)": [
-            "Have your unwanted thoughts or rituals lasted more than an hour a day for over two weeks?",
-            "Do they interfere with your ability to focus or get things done?"
-        ],
-        "Post-Traumatic Stress Disorder (PTSD)": [
-            "Have you had distressing memories or reactions for more than a month after a traumatic event?",
-            "Has this trauma affected your relationships or ability to concentrate?"
-        ],
-        "Borderline Personality Disorder": [
-            "Have your emotional struggles lasted for several months or longer?",
-            "Have your intense emotions or relationships caused problems at work or home?"
-        ],
-        "Social Anxiety Disorder": [
-            "Have you been avoiding social situations for six months or more?",
-            "Has this anxiety made it difficult to go to work or school?"
-        ],
-        "Generalized Anxiety Disorder (GAD)": [
-            "Have you experienced excessive worry about various things for 6 months or more?",
-            "Has this worry made it difficult to focus or enjoy life?"
-        ],
-        "Adjustment Disorder": [
-            "Did your emotional symptoms begin soon after a specific stressor or change?",
-            "Is the stress still affecting your ability to function or move forward?"
-        ],
-        "Insomnia": [
-            "Have you had trouble sleeping at least three nights a week for the past month?",
-            "Does your poor sleep affect your energy or concentration during the day?"
-        ],
-        "Autism Spectrum Disorder": [
-            "Have you experienced social or communication challenges since early childhood?",
-            "Do these challenges affect your ability to connect with others or work independently?"
-        ],
-        "Persistent Depressive Disorder": [
-            "Have you felt low or hopeless for more days than not for over two years?",
-            "Are these long-term feelings making everyday life harder to manage?"
-        ],
-        "Major Depressive Disorder": [
-            "Have you felt down or unmotivated for more than two weeks?",
-            "Have these feelings made it hard to complete everyday tasks?"
-        ],
-        "Separation Anxiety Disorder": [
-            "Have you felt extreme distress when away from someone for over four weeks?",
-            "Has this fear kept you from going places or being independent?"
-        ],
-        "Dissociative Amnesia": [
-            "Has the memory loss lasted more than a few hours or days?",
-            "Is it interfering with your ability to function or feel safe?"
-        ]
-    }
+
 
     st.header(" Mental Health Condition Predictor")
 
@@ -275,8 +191,7 @@ def home_show():
                 '>
                     <p>📋 <strong>Follow the Instructions Below:</strong></p>
                     <ul style="padding-left: 20px; margin: 0;">
-                        <li>📝 <strong>Enter at least 7 symptoms</strong> (e.g., sleep disturbance, anxiety, dizziness...)</li>
-                        <li>💡 Click the <strong>'Predict Mental Health Condition'</strong> button to continue</li>
+                        <li>📝 <strong>Enter at least 7 symptoms</strong> (e.g., sleep disturbance, low mood, dizziness...)</li>
                         <li>🔍 Answer follow-up questions to receive helpful tips and condition insights</li>
                     </ul>
                 </div>
@@ -339,6 +254,7 @@ def home_show():
             st.warning("⚠️ Please enter or select symptoms.")
 
     # Follow-up question logic
+    # Follow-up question logic
     if st.session_state.get("follow_up_triggered") and not st.session_state.get("cleared"):
 
         disease = st.session_state.get("predicted_disease", "")
@@ -346,91 +262,92 @@ def home_show():
         answers = st.session_state.get("follow_up_answers", [])
         index = st.session_state.get("follow_up_index", 0)
 
-        st.markdown("### 🔍 Follow-up Questions")
+        st.markdown("---")
+        # Split layout: Questions on the left, Precautions on the right
+        left_col, right_col = st.columns(2)
 
-        # Display all previously answered questions
-        if answers:
-            for i, ans in enumerate(answers):
-                st.markdown(f"**Q{i + 1}: {questions[i]}**")
-                st.markdown(f"🟩 Answer: **{ans}**")
+        with left_col:
+            st.markdown("### 🔍 Follow-up Questions")
 
-        # Ask the next unanswered question
-        if index < len(questions):
-            st.markdown(f"**Q{index + 1}: {questions[index]}**")
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("✅ Yes", key=f"yes_{index}"):
-                    answers.append("Yes")
-                    st.session_state.follow_up_answers = answers
-                    st.session_state.follow_up_index = index + 1
-                    st.rerun()
-            with col2:
-                if st.button("❌ No", key=f"no_{index}"):
-                    answers.append("No")
-                    st.session_state.follow_up_answers = answers
-                    st.session_state.follow_up_index = index + 1
-                    st.rerun()
+            # Display all previously answered questions
+            if answers:
+                for i, ans in enumerate(answers):
+                    st.markdown(f"**Q{i + 1}: {questions[i]}**")
+                    st.markdown(f"🟩 Answer: **{ans}**")
 
-        # After all questions answered
-        elif index == len(questions):
-            yes_count = answers.count("Yes")
-            no_count = answers.count("No")
+            # Ask the next unanswered question
+            if index < len(questions):
+                st.markdown(f"**Q{index + 1}: {questions[index]}**")
+                yes_col, no_col = st.columns(2)
+                with yes_col:
+                    if st.button("✅ Yes", key=f"yes_{index}"):
+                        answers.append("Yes")
+                        st.session_state.follow_up_answers = answers
+                        st.session_state.follow_up_index = index + 1
+                        st.rerun()
+                with no_col:
+                    if st.button("❌ No", key=f"no_{index}"):
+                        answers.append("No")
+                        st.session_state.follow_up_answers = answers
+                        st.session_state.follow_up_index = index + 1
+                        st.rerun()
 
-            if yes_count > no_count:
-                st.success(f"✅ Based on your responses, it is likely that you are experiencing **{disease}**.")
-                st.markdown("🧘 **Consider consulting a mental health professional for further support.**")
-            else:
-                st.info("❕ Based on your responses, it's less likely that you're experiencing a severe condition.")
-                st.markdown(
-                    "💬 _Still, if you're feeling unwell, please consider speaking to someone you trust or a mental health expert._")
+        with right_col:
+            # Show only after all questions answered
+            if index == len(questions):
+                yes_count = answers.count("Yes")
+                no_count = answers.count("No")
 
-            st.markdown("💡 _Note: This tool is informational. For real diagnosis, consult a professional._")
-
-            # Load precautions from Excel
-            precautions = []
-            excel_path = os.path.join(base_dir, "..", "datasets", "precaution_dataset.xlsx")
-            try:
-                wb = load_workbook(excel_path)
-                ws = wb.active
-                for row in ws.iter_rows(min_row=2, values_only=True):
-                    if row[0] and row[1] and disease.strip().lower() == row[0].strip().lower():
-                        precautions.append(row[1])
-            except Exception as e:
-                st.warning(f"⚠️ Could not load precautions: {e}")
-
-            # UI Section
-            st.markdown("---")
-            st.subheader("📋 Precaution or Self-care Tips:")
-
-            if precautions:
-                # Initialize toggle state
-                if "show_all_precautions" not in st.session_state:
-                    st.session_state.show_all_precautions = False
-
-                # Decide how many to show
-                if st.session_state.show_all_precautions:
-                    to_show = precautions
+                if yes_count > no_count:
+                    st.success(f"✅ Based on your responses, it is likely that you are experiencing **{disease}**.")
+                    st.markdown("🧘 **Consider consulting a mental health professional for further support.**")
                 else:
-                    to_show = precautions[:6]
+                    st.info("❕ Based on your responses, it's less likely that you're experiencing a severe condition.")
+                    st.markdown(
+                        "💬 _Still, if you're feeling unwell, please consider speaking to someone you trust or a mental health expert._")
 
-                # Display tips
-                for i, tip in enumerate(to_show, 1):
-                    st.markdown(f"**{i}.** {tip}")
+                st.markdown("💡 _Note: This tool is informational. For real diagnosis, consult a professional._")
 
-                # Show toggle button only if more than 6 tips exist
-                if len(precautions) > 6:
-                    if st.session_state.show_all_precautions:
-                        if st.button("🔼 Show Less"):
-                            st.session_state.show_all_precautions = False
+                # Load precautions from Excel
+                precautions = []
+                excel_path = os.path.join(base_dir, "..", "datasets", "precaution_dataset.xlsx")
+                try:
+                    wb = load_workbook(excel_path)
+                    ws = wb.active
+                    for row in ws.iter_rows(min_row=2, values_only=True):
+                        if row[0] and row[1] and disease.strip().lower() == row[0].strip().lower():
+                            precautions.append(row[1])
+                except Exception as e:
+                    st.warning(f"⚠️ Could not load precautions: {e}")
+
+                # UI Section
+                st.markdown("---")
+                st.subheader("📋 Suggestion or Self-care Tips:")
+
+                if precautions:
+                    # Toggle state
+                    if "show_all_precautions" not in st.session_state:
+                        st.session_state.show_all_precautions = False
+
+                    # Show all or first 6
+                    to_show = precautions if st.session_state.show_all_precautions else precautions[:6]
+
+                    # Display tips
+                    for i, tip in enumerate(to_show, 1):
+                        st.markdown(f"**{i}.** {tip}")
+
+                    if len(precautions) > 6:
+                        toggle_label = "🔼 Show Less" if st.session_state.show_all_precautions else "🔽 Show More"
+                        if st.button(toggle_label):
+                            st.session_state.show_all_precautions = not st.session_state.show_all_precautions
                             st.rerun()
-                    else:
-                        if st.button("🔽Show More"):
-                            st.session_state.show_all_precautions = True
-                            st.rerun()
-            else:
-                st.info("No specific precautions found for this condition.")
+                else:
+                    st.info("No specific precautions found for this condition.")
 
-            # Clear session
+        # Clear session button centered
+        st.markdown("---")
+        center_col = st.columns(2)
+        with center_col[1]:  # Middle column
             if st.button("🔄 Clear"):
                 reset_all_states()
 
