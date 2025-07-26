@@ -1,15 +1,12 @@
 import streamlit as st
 import joblib
-from streamlit import columns
-from streamlit_lottie import st_lottie
-import requests
-import random
 import os
 import pandas as pd
+import random
 from openpyxl import load_workbook
 from fuzzywuzzy import process
-import time
 from streamlit_autorefresh import st_autorefresh
+from follow_ups import follow_up_questions, quotes
 
 # Get current file directory
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -43,18 +40,9 @@ def fhome_show():
 
     # Upper section (just ui)
     if not st.session_state.started_input:
-        quotes = [
-            "Believe you can and you're halfway there.",
-            "Every day may not be good... but there is something good in every day.",
-            "Your present circumstances don’t determine where you can go; they merely determine where you start.",
-            "Healing takes time, and that's okay.",
-            "You are enough, just as you are.",
-            "You alone are enough. You have nothing to prove to anybody",
-            "Healing grows in honesty, openness, and the courage to speak",
-            "Sometimes the people around you won't understand your journey",
-        ]
+
         if not st.session_state.started_input:
-            st_autorefresh(interval=15 * 1000, limit=None, key="quote_autorefresh")
+            st_autorefresh(interval=20 * 1000, limit=None, key="quote_autorefresh")
 
             if "quote_index" not in st.session_state:
                 st.session_state.quote_index = 0
@@ -133,7 +121,7 @@ def fhome_show():
             </div>
         """, unsafe_allow_html=True)
 
-    # lower section
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     illness_data_path = os.path.join(base_dir, "..", "datasets", "illness_dataset.csv")
     df_ill = pd.read_csv(illness_data_path)
@@ -156,92 +144,7 @@ def fhome_show():
                 key = str(alt_name).strip().lower().replace("_", " ")
                 similar_name_map[key] = actual_symptom
 
-    follow_up_questions = {
-        "Depression": [
-            "Have you been feeling down or sad most of the day for over 2 weeks?",
-            "Are your daily responsibilities harder to manage because of these feelings?"
-        ],
-        "Anxiety": [
-            "Do you often feel nervous or on edge, even without a clear reason?",
-            "Is it hard to control your worrying?",
-        ],
-        "Bipolar Disorder": [
-            "Have you experienced extreme mood swings recently?",
-            "Have these shifts affected your work, finances, or relationships?"
-        ],
-        "Panic Disorder": [
-            "Have you had multiple panic attacks over the past month?",
-            "Do you avoid situations or places out of fear of having an attack?"
-        ],
-        "Schizophrenia": [
-            "Have unusual thoughts or perceptions persisted for over a month?",
-            "Have these experiences disrupted your work or personal life?"
-        ],
-        "Eating Disorder": [
-            "Have you been concerned about food or body image for several months?",
-            "Is your eating behavior affecting your health or daily functioning?"
-        ],
-        "ADHD (Attention Deficit Hyperactivity Disorder)": [
-            "Have you struggled with attention or hyperactivity since childhood?",
-            "Do these difficulties impact your school, job, or daily activities?"
-        ],
-        "Dissociative Identity Disorder": [
-            "Have you felt like multiple identities or memory gaps have persisted over weeks or months?",
-            "Have these experiences disrupted your daily life or relationships?"
-        ],
-        "Substance Use Disorder": [
-            "Have you been using substances regularly for over a month?",
-            "Has substance use interfered with your responsibilities or relationships?"
-        ],
-        "Obsessive-Compulsive Disorder (OCD)": [
-            "Have your unwanted thoughts or rituals lasted more than an hour a day for over two weeks?",
-            "Do they interfere with your ability to focus or get things done?"
-        ],
-        "Post-Traumatic Stress Disorder (PTSD)": [
-            "Have you had distressing memories or reactions for more than a month after a traumatic event?",
-            "Has this trauma affected your relationships or ability to concentrate?"
-        ],
-        "Borderline Personality Disorder": [
-            "Have your emotional struggles lasted for several months or longer?",
-            "Have your intense emotions or relationships caused problems at work or home?"
-        ],
-        "Social Anxiety Disorder": [
-            "Have you been avoiding social situations for six months or more?",
-            "Has this anxiety made it difficult to go to work or school?"
-        ],
-        "Generalized Anxiety Disorder (GAD)": [
-            "Have you experienced excessive worry about various things for 6 months or more?",
-            "Has this worry made it difficult to focus or enjoy life?"
-        ],
-        "Adjustment Disorder": [
-            "Did your emotional symptoms begin soon after a specific stressor or change?",
-            "Is the stress still affecting your ability to function or move forward?"
-        ],
-        "Insomnia": [
-            "Have you had trouble sleeping at least three nights a week for the past month?",
-            "Does your poor sleep affect your energy or concentration during the day?"
-        ],
-        "Autism Spectrum Disorder": [
-            "Have you experienced social or communication challenges since early childhood?",
-            "Do these challenges affect your ability to connect with others or work independently?"
-        ],
-        "Persistent Depressive Disorder": [
-            "Have you felt low or hopeless for more days than not for over two years?",
-            "Are these long-term feelings making everyday life harder to manage?"
-        ],
-        "Major Depressive Disorder": [
-            "Have you felt down or unmotivated for more than two weeks?",
-            "Have these feelings made it hard to complete everyday tasks?"
-        ],
-        "Separation Anxiety Disorder": [
-            "Have you felt extreme distress when away from someone for over four weeks?",
-            "Has this fear kept you from going places or being independent?"
-        ],
-        "Dissociative Amnesia": [
-            "Has the memory loss lasted more than a few hours or days?",
-            "Is it interfering with your ability to function or feel safe?"
-        ]
-    }
+
 
     st.header(" Mental Health Condition Predictor")
 
@@ -258,113 +161,15 @@ def fhome_show():
         if key not in st.session_state:
             st.session_state[key] = default
 
-    col1, col2= columns(2)
-    with col1:
-        # Input container
-        st.markdown("### 📝 Enter Your Symptoms")
-        st.text_area("", key="user_input", placeholder="e.g., sleep disturbance, irritability, dizziness...")
+    # Input container
+    with st.container():
+        left_column, right_column = st.columns(2)
+        with left_column:
+            st.markdown("### 📝 Enter Your Symptoms")
+            st.text_area("", key="user_input", placeholder="e.g., sleep disturbance, irritability, dizziness...")
 
-        # Predict button
-        if st.button("💡 Predict Mental Health Condition"):
-            st.session_state.follow_up_index = 0
-            st.session_state.follow_up_answers = []
-            st.session_state.follow_up_complete = False
-            st.session_state.cleared = False
-            st.session_state.follow_up_triggered = False  # reset
-
-            user_input = st.session_state.user_input
-
-            if user_input.strip():
-                all_entered = [normalize_symptom(s) for s in user_input.split(",") if s.strip()]
-
-                matched, unmatched, corrected = [], [], []
-                for sym in all_entered:
-                    if sym in normalized_column_map:
-                        matched.append(normalized_column_map[sym])
-                    elif sym in similar_name_map:
-                        matched.append(similar_name_map[sym])
-                    else:
-                        closest = get_closest_symptom(sym, all_normalized)
-                        if closest:
-                            corrected.append((sym, closest))
-                            matched.append(normalized_column_map[closest])
-                        else:
-                            unmatched.append(sym)
-
-                if len(matched) < 7:
-                    st.warning("⚠️ Please enter at least 7 valid symptoms.")
-                else:
-                    input_vector = [1 if symptom in matched else 0 for symptom in symptoms]
-                    prediction = mdl.predict([input_vector])[0]
-                    predicted_disease = le.inverse_transform([prediction])[0]
-
-                    st.session_state.predicted_disease = predicted_disease
-
-                    if predicted_disease in follow_up_questions:
-                        st.session_state.follow_up_questions = follow_up_questions[predicted_disease]
-                        st.session_state.follow_up_triggered = True
-                    else:
-                        st.success(f"Predicted mental health condition: **{predicted_disease}**")
-                        st.session_state.follow_up_triggered = False
-
-                if unmatched:
-                    st.warning("⚠️Opps!! Unrecognized symptoms: " + ", or our current dataset do not have that symptoms. ".join(unmatched))
-                if corrected:
-                    for wrong, fixed in corrected:
-                        st.info(f"✅ Interpreted '{wrong}' as '{fixed}'")
-            else:
-                st.warning("⚠️ Please enter 7 symptoms or more than 7 symptoms.")
-
-    with col2:
-        st.markdown('### 🧠 Further Inquiry:')
-
-        if st.session_state.get("follow_up_triggered"):
-
-            answers = []
-            questions = st.session_state.follow_up_questions
-
-            if "followup_answers" not in st.session_state:
-                st.session_state.followup_answers = [None] * len(questions)
-
-            st.markdown("#### 🧠 Please answer the following:")
-
-            for i, question in enumerate(questions):
-                st.markdown(f"**{i + 1}. {question}**")
-
-                col1, col2 = st.columns([1, 1])
-
-                with col2:
-                    if st.button("❌ No", key=f"no_{i}"):
-                        st.session_state.followup_answers[i] = "No"
-                with col1:
-                    if st.button("✅ Yes", key=f"yes_{i}"):
-                        st.session_state.followup_answers[i] = "Yes"
-
-                # Show selected answer (optional)
-                if st.session_state.followup_answers[i]:
-                    st.markdown(f"**Selected:** {st.session_state.followup_answers[i]}")
-
-            # Submit button
-            if None in st.session_state.followup_answers:
-                st.warning("⚠️ Please answer all follow-up questions before submitting.")
-            else:
-                st.session_state.follow_up_answers = st.session_state.followup_answers
-                yes_count = st.session_state.follow_up_answers.count("Yes")
-                no_count = st.session_state.follow_up_answers.count("No")
-
-                # If both answers are "No", show direct warning and skip follow-up
-                if yes_count == 0 and no_count == 2:
-                    st.session_state.follow_up_triggered = False
-                    st.session_state.cleared = True
-                    st.session_state.skip_followup_due_to_negative_screen = True
-                    st.rerun()
-                else:
-                    st.session_state.follow_up_index = len(questions)
-                    st.session_state.follow_up_complete = True
-                    st.success("✅ Answers submitted successfully!")
-                    st.rerun()
-
-        else:
+        with right_column:
+            # st.markdown("### Follow the instructions")
             st.markdown(
                 """
                 <div style='
@@ -373,50 +178,140 @@ def fhome_show():
                     padding: 20px;
                     border-radius: 12px;
                     font-size: 16px;
-                    text-align: center;
+                    text-align: left;
                     margin-top: 20px;
                 '>
-                    🔍 Please enter at least 7 symptoms and click <strong>'💡 Predict Mental Health Condition'</strong> to continue with follow-up questions.
+                    <p>📋 <strong>Follow the Instructions Below:</strong></p>
+                    <ul style="padding-left: 20px; margin: 0;">
+                        <li>📝 <strong>Enter at least 7 symptoms</strong> (e.g., sleep disturbance, low mood, dizziness...)</li>
+                        <li>🔍 Answer follow-up questions to receive helpful tips and condition insights</li>
+                    </ul>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
-    # Placeholder for follow-up section and actual precautions logic
+    # Predict button
+    if st.button("💡 Predict Mental Health Condition"):
+        st.session_state.follow_up_index = 0
+        st.session_state.follow_up_answers = []
+        st.session_state.follow_up_complete = False
+        st.session_state.cleared = False
+        st.session_state.follow_up_triggered = False  # reset
+
+        user_input = st.session_state.user_input
+        selected_symptoms = st.session_state.selected_symptoms
+
+        if user_input.strip() or selected_symptoms:
+            typed_symptoms_raw = [normalize_symptom(s) for s in user_input.split(",") if s.strip()]
+            selected_symptoms_raw = [normalize_symptom(s) for s in selected_symptoms]
+            all_entered = list(set(typed_symptoms_raw + selected_symptoms_raw))
+
+            matched, unmatched, corrected = [], [], []
+            for sym in all_entered:
+                if sym in normalized_column_map:
+                    matched.append(normalized_column_map[sym])
+                elif sym in similar_name_map:
+                    matched.append(similar_name_map[sym])
+                else:
+                    closest = get_closest_symptom(sym, all_normalized)
+                    if closest:
+                        corrected.append((sym, closest))
+                        matched.append(normalized_column_map[closest])
+                    else:
+                        unmatched.append(sym)
+
+            if len(matched) < 7:
+                st.warning("⚠️ Please enter or select at least 7 valid symptoms.")
+            else:
+                input_vector = [1 if symptom in matched else 0 for symptom in symptoms]
+                prediction = mdl.predict([input_vector])[0]
+                predicted_disease = le.inverse_transform([prediction])[0]
+
+                st.session_state.predicted_disease = predicted_disease
+
+                if predicted_disease in follow_up_questions:
+                    questions_copy = follow_up_questions[predicted_disease][:]
+                    random.shuffle(questions_copy)
+                    st.session_state.follow_up_questions = questions_copy
+                    st.session_state.follow_up_triggered = True
+                else:
+                    st.success(f"Predicted mental health condition: **{predicted_disease}**")
+                    st.session_state.follow_up_triggered = False
+
+            if unmatched:
+                st.warning("⚠️ Unrecognized symptoms: " + ", ".join(unmatched))
+            if corrected:
+                for wrong, fixed in corrected:
+                    st.info(f"✅ Interpreted '{wrong}' as '{fixed}'")
+        else:
+            st.warning("⚠️ Please enter or select symptoms.")
+
+    # Follow-up question logic
     if st.session_state.get("follow_up_triggered") and not st.session_state.get("cleared"):
+
         disease = st.session_state.get("predicted_disease", "")
+        questions = st.session_state.get("follow_up_questions", [])
         answers = st.session_state.get("follow_up_answers", [])
         index = st.session_state.get("follow_up_index", 0)
 
+        st.markdown("---")
         st.markdown("### 🔍 Follow-up Questions")
 
-        # ⏳ Just show loading animation or message here
-        st.markdown(
-            """
-            <div style='text-align: center; padding: 20px;'>
-                ⏳ <strong>Loading dynamic follow-up interface...</strong><br>
-                <em>(This section is coming soon)</em>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        # Display all previously answered questions
+        if answers:
+            for i, ans in enumerate(answers):
+                st.markdown(f"**Q{i + 1}: {questions[i]}**")
+                st.markdown(f"🟩 Answer: **{ans}**")
 
-        # Once all follow-ups are done, show precautions
-        if index == len(st.session_state.get("follow_up_questions", [])):
+        # Ask the next unanswered question
+        if index < len(questions):
+            st.markdown(f"**Q{index + 1}: {questions[index]}**")
+            yes_col, no_col = st.columns(2)
+            with yes_col:
+                if st.button("✅ Yes", key=f"yes_{index}"):
+                    answers.append("Yes")
+                    st.session_state.follow_up_answers = answers
+                    st.session_state.follow_up_index = index + 1
+                    st.rerun()
+            with no_col:
+                if st.button("❌ No", key=f"no_{index}"):
+                    answers.append("No")
+                    st.session_state.follow_up_answers = answers
+                    st.session_state.follow_up_index = index + 1
+                    st.rerun()
+        st.markdown('---')
+        # Show only after all questions answered
+        if index == len(questions):  # All questions answered
             yes_count = answers.count("Yes")
             no_count = answers.count("No")
+            total_questions = len(questions)
 
-            if yes_count > no_count:
-                st.success(f"✅ Based on your responses, it is likely that you are experiencing **{disease}**.")
-                st.markdown("🧘 **Consider consulting a mental health professional for further support.**")
-            else:
-                st.info("❕ Based on your responses, it's less likely that you're experiencing a severe condition.")
+            st.markdown("### 🧠 Interpretation")
+
+            if yes_count >= 8:
+                st.success(f"✅ Based on your responses, you are **very likely experiencing {disease}**.")
                 st.markdown(
-                    "💬 _Still, if you're feeling unwell, please consider speaking to someone you trust or a mental health expert._")
+                    "🧘 **We strongly recommend speaking to a licensed mental health professional as soon as possible.**")
+
+            elif 5 <= yes_count < 8:
+                st.info(
+                    f"ℹ️ Your answers suggest symptoms **related to {disease}**, though not necessarily severe.")
+                st.markdown("💬 _It may be helpful to monitor your symptoms and consider professional guidance._")
+
+            elif 2 <= yes_count < 5:
+                st.info(f"❕ Some features of **{disease}** may be present, but not dominant.")
+                st.markdown(
+                    "📌 _Consider lifestyle support, self-care, and possibly a preliminary discussion with a mental health counselor._")
+
+            else:  # yes_count < 2
+                st.warning(
+                    f"⚠️ Your symptoms do **not strongly align with {disease}**, but could indicate a different or more severe condition.")
+                st.markdown(
+                    "🔍 _Please consider seeking a comprehensive evaluation to rule out other possible concerns._")
 
             st.markdown("💡 _Note: This tool is informational. For real diagnosis, consult a professional._")
-
-            # Show precaution tips
+        # Load precautions from Excel
             precautions = []
             excel_path = os.path.join(base_dir, "..", "datasets", "precaution_dataset.xlsx")
             try:
@@ -428,32 +323,34 @@ def fhome_show():
             except Exception as e:
                 st.warning(f"⚠️ Could not load precautions: {e}")
 
+            # UI Section
             st.markdown("---")
-            st.subheader("📋 Precaution or Self-care Tips:")
+            st.subheader("📋 Suggestion or Self-care Tips:")
 
             if precautions:
+                # Toggle state
                 if "show_all_precautions" not in st.session_state:
                     st.session_state.show_all_precautions = False
 
+                # Show all or first 6
                 to_show = precautions if st.session_state.show_all_precautions else precautions[:6]
 
+                # Display tips
                 for i, tip in enumerate(to_show, 1):
                     st.markdown(f"**{i}.** {tip}")
 
                 if len(precautions) > 6:
-                    if st.session_state.show_all_precautions:
-                        if st.button("🔼 Show Less"):
-                            st.session_state.show_all_precautions = False
-                            st.rerun()
-                    else:
-                        if st.button("🔽 Show More"):
-                            st.session_state.show_all_precautions = True
-                            st.rerun()
+                    toggle_label = "🔼 Show Less" if st.session_state.show_all_precautions else "🔽 Show More"
+                    if st.button(toggle_label):
+                        st.session_state.show_all_precautions = not st.session_state.show_all_precautions
+                        st.rerun()
             else:
                 st.info("No specific precautions found for this condition.")
 
+        # Clear session button centered
+        center_col = st.columns(2)
+        with center_col[1]:  # Middle column
             if st.button("🔄 Clear"):
                 reset_all_states()
-
 
 

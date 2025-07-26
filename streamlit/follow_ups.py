@@ -1,3 +1,14 @@
+quotes = [
+            "Believe you can and you're halfway there.",
+            "Every day may not be good... but there is something good in every day.",
+            "Your present circumstances don’t determine where you can go; they merely determine where you start.",
+            "Healing takes time, and that's okay.",
+            "You are enough, just as you are.",
+            "You alone are enough. You have nothing to prove to anybody",
+            "Healing grows in honesty, openness, and the courage to speak",
+            "Sometimes the people around you won't understand your journey",
+        ]
+
 follow_up_questions = {
         "Depression": [
             "Have you been feeling down or sad most of the day for over 2 weeks?",

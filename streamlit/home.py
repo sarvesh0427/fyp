@@ -2,10 +2,11 @@ import streamlit as st
 import joblib
 import os
 import pandas as pd
+import random
 from openpyxl import load_workbook
 from fuzzywuzzy import process
 from streamlit_autorefresh import st_autorefresh
-from follow_ups import follow_up_questions
+from follow_ups import follow_up_questions, quotes
 
 # Get current file directory
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,16 +40,7 @@ def home_show():
 
     # Upper section (just ui)
     if not st.session_state.started_input:
-        quotes = [
-            "Believe you can and you're halfway there.",
-            "Every day may not be good... but there is something good in every day.",
-            "Your present circumstances don’t determine where you can go; they merely determine where you start.",
-            "Healing takes time, and that's okay.",
-            "You are enough, just as you are.",
-            "You alone are enough. You have nothing to prove to anybody",
-            "Healing grows in honesty, openness, and the courage to speak",
-            "Sometimes the people around you won't understand your journey",
-        ]
+
         if not st.session_state.started_input:
             st_autorefresh(interval=20 * 1000, limit=None, key="quote_autorefresh")
 
@@ -239,7 +231,9 @@ def home_show():
                 st.session_state.predicted_disease = predicted_disease
 
                 if predicted_disease in follow_up_questions:
-                    st.session_state.follow_up_questions = follow_up_questions[predicted_disease]
+                    questions_copy = follow_up_questions[predicted_disease][:]
+                    random.shuffle(questions_copy)
+                    st.session_state.follow_up_questions = questions_copy
                     st.session_state.follow_up_triggered = True
                 else:
                     st.success(f"Predicted mental health condition: **{predicted_disease}**")
@@ -254,7 +248,6 @@ def home_show():
             st.warning("⚠️ Please enter or select symptoms.")
 
     # Follow-up question logic
-    # Follow-up question logic
     if st.session_state.get("follow_up_triggered") and not st.session_state.get("cleared"):
 
         disease = st.session_state.get("predicted_disease", "")
@@ -263,89 +256,98 @@ def home_show():
         index = st.session_state.get("follow_up_index", 0)
 
         st.markdown("---")
-        # Split layout: Questions on the left, Precautions on the right
-        left_col, right_col = st.columns(2)
+        st.markdown("### 🔍 Follow-up Questions")
 
-        with left_col:
-            st.markdown("### 🔍 Follow-up Questions")
+        # Display all previously answered questions
+        if answers:
+            for i, ans in enumerate(answers):
+                st.markdown(f"**Q{i + 1}: {questions[i]}**")
+                st.markdown(f"🟩 Answer: **{ans}**")
 
-            # Display all previously answered questions
-            if answers:
-                for i, ans in enumerate(answers):
-                    st.markdown(f"**Q{i + 1}: {questions[i]}**")
-                    st.markdown(f"🟩 Answer: **{ans}**")
+        # Ask the next unanswered question
+        if index < len(questions):
+            st.markdown(f"**Q{index + 1}: {questions[index]}**")
+            yes_col, no_col = st.columns(2)
+            with yes_col:
+                if st.button("✅ Yes", key=f"yes_{index}"):
+                    answers.append("Yes")
+                    st.session_state.follow_up_answers = answers
+                    st.session_state.follow_up_index = index + 1
+                    st.rerun()
+            with no_col:
+                if st.button("❌ No", key=f"no_{index}"):
+                    answers.append("No")
+                    st.session_state.follow_up_answers = answers
+                    st.session_state.follow_up_index = index + 1
+                    st.rerun()
+        st.markdown('---')
+        # Show only after all questions answered
+        if index == len(questions):  # All questions answered
+            yes_count = answers.count("Yes")
+            no_count = answers.count("No")
+            total_questions = len(questions)
 
-            # Ask the next unanswered question
-            if index < len(questions):
-                st.markdown(f"**Q{index + 1}: {questions[index]}**")
-                yes_col, no_col = st.columns(2)
-                with yes_col:
-                    if st.button("✅ Yes", key=f"yes_{index}"):
-                        answers.append("Yes")
-                        st.session_state.follow_up_answers = answers
-                        st.session_state.follow_up_index = index + 1
+            st.markdown("### 🧠 Interpretation")
+
+            if yes_count >= 8:
+                st.success(f"✅ Based on your responses, you are **very likely experiencing {disease}**.")
+                st.markdown(
+                    "🧘 **We strongly recommend speaking to a licensed mental health professional as soon as possible.**")
+
+            elif 5 <= yes_count < 8:
+                st.info(
+                    f"ℹ️ Your answers suggest symptoms **related to {disease}**, though not necessarily severe.")
+                st.markdown("💬 _It may be helpful to monitor your symptoms and consider professional guidance._")
+
+            elif 2 <= yes_count < 5:
+                st.info(f"❕ Some features of **{disease}** may be present, but not dominant.")
+                st.markdown(
+                    "📌 _Consider lifestyle support, self-care, and possibly a preliminary discussion with a mental health counselor._")
+
+            else:  # yes_count < 2
+                st.warning(
+                    f"⚠️ Your symptoms do **not strongly align with {disease}**, but could indicate a different or more severe condition.")
+                st.markdown(
+                    "🔍 _Please consider seeking a comprehensive evaluation to rule out other possible concerns._")
+
+            st.markdown("💡 _Note: This tool is informational. For real diagnosis, consult a professional._")
+        # Load precautions from Excel
+            precautions = []
+            excel_path = os.path.join(base_dir, "..", "datasets", "precaution_dataset.xlsx")
+            try:
+                wb = load_workbook(excel_path)
+                ws = wb.active
+                for row in ws.iter_rows(min_row=2, values_only=True):
+                    if row[0] and row[1] and disease.strip().lower() == row[0].strip().lower():
+                        precautions.append(row[1])
+            except Exception as e:
+                st.warning(f"⚠️ Could not load precautions: {e}")
+
+            # UI Section
+            st.markdown("---")
+            st.subheader("📋 Suggestion or Self-care Tips:")
+
+            if precautions:
+                # Toggle state
+                if "show_all_precautions" not in st.session_state:
+                    st.session_state.show_all_precautions = False
+
+                # Show all or first 6
+                to_show = precautions if st.session_state.show_all_precautions else precautions[:6]
+
+                # Display tips
+                for i, tip in enumerate(to_show, 1):
+                    st.markdown(f"**{i}.** {tip}")
+
+                if len(precautions) > 6:
+                    toggle_label = "🔼 Show Less" if st.session_state.show_all_precautions else "🔽 Show More"
+                    if st.button(toggle_label):
+                        st.session_state.show_all_precautions = not st.session_state.show_all_precautions
                         st.rerun()
-                with no_col:
-                    if st.button("❌ No", key=f"no_{index}"):
-                        answers.append("No")
-                        st.session_state.follow_up_answers = answers
-                        st.session_state.follow_up_index = index + 1
-                        st.rerun()
-
-        with right_col:
-            # Show only after all questions answered
-            if index == len(questions):
-                yes_count = answers.count("Yes")
-                no_count = answers.count("No")
-
-                if yes_count > no_count:
-                    st.success(f"✅ Based on your responses, it is likely that you are experiencing **{disease}**.")
-                    st.markdown("🧘 **Consider consulting a mental health professional for further support.**")
-                else:
-                    st.info("❕ Based on your responses, it's less likely that you're experiencing a severe condition.")
-                    st.markdown(
-                        "💬 _Still, if you're feeling unwell, please consider speaking to someone you trust or a mental health expert._")
-
-                st.markdown("💡 _Note: This tool is informational. For real diagnosis, consult a professional._")
-
-                # Load precautions from Excel
-                precautions = []
-                excel_path = os.path.join(base_dir, "..", "datasets", "precaution_dataset.xlsx")
-                try:
-                    wb = load_workbook(excel_path)
-                    ws = wb.active
-                    for row in ws.iter_rows(min_row=2, values_only=True):
-                        if row[0] and row[1] and disease.strip().lower() == row[0].strip().lower():
-                            precautions.append(row[1])
-                except Exception as e:
-                    st.warning(f"⚠️ Could not load precautions: {e}")
-
-                # UI Section
-                st.markdown("---")
-                st.subheader("📋 Suggestion or Self-care Tips:")
-
-                if precautions:
-                    # Toggle state
-                    if "show_all_precautions" not in st.session_state:
-                        st.session_state.show_all_precautions = False
-
-                    # Show all or first 6
-                    to_show = precautions if st.session_state.show_all_precautions else precautions[:6]
-
-                    # Display tips
-                    for i, tip in enumerate(to_show, 1):
-                        st.markdown(f"**{i}.** {tip}")
-
-                    if len(precautions) > 6:
-                        toggle_label = "🔼 Show Less" if st.session_state.show_all_precautions else "🔽 Show More"
-                        if st.button(toggle_label):
-                            st.session_state.show_all_precautions = not st.session_state.show_all_precautions
-                            st.rerun()
-                else:
-                    st.info("No specific precautions found for this condition.")
+            else:
+                st.info("No specific precautions found for this condition.")
 
         # Clear session button centered
-        st.markdown("---")
         center_col = st.columns(2)
         with center_col[1]:  # Middle column
             if st.button("🔄 Clear"):
