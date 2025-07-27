@@ -222,7 +222,7 @@ def home_show():
                         unmatched.append(sym)
 
             if len(matched) < 7:
-                st.warning("⚠️ Please enter or select at least 7 valid symptoms.")
+                st.warning("⚠️ Please enter at least 7 valid symptoms or if you are having only this symptoms then you may not have mental illness.")
             else:
                 input_vector = [1 if symptom in matched else 0 for symptom in symptoms]
                 prediction = mdl.predict([input_vector])[0]
@@ -245,7 +245,7 @@ def home_show():
                 for wrong, fixed in corrected:
                     st.info(f"✅ Interpreted '{wrong}' as '{fixed}'")
         else:
-            st.warning("⚠️ Please enter or select symptoms.")
+            st.warning("⚠️ Please enter a symptoms.")
 
     # Follow-up question logic
     if st.session_state.get("follow_up_triggered") and not st.session_state.get("cleared"):
