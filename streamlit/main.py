@@ -67,7 +67,7 @@ st.markdown("""
 import home
 import thome
 import fhome
-import confession
+# import confession
 import about
 import base64
 from io import BytesIO
@@ -98,7 +98,7 @@ if section == "🏠 Home":
     # fhome.fhome_show()
     # thome.thome_show()
 elif section == "📝 Anonymous Confession Wall":
-    confession.confess()
+    st.markdown('Currently Unavailable !!!')
 elif section == "ℹ️ About":
     about.about_show()
 
