@@ -65,8 +65,6 @@ st.markdown("""
 
 # Import your modules
 import home
-import thome
-import fhome
 # import confession
 import about
 import base64
@@ -91,12 +89,10 @@ st.sidebar.markdown(
 )
 
 section = st.sidebar.radio("", ["🏠 Home", "📝 Anonymous Confession Wall", "ℹ️ About"])
-# import fhome
+
 # Section logic
 if section == "🏠 Home":
     home.home_show()
-    # fhome.fhome_show()
-    # thome.thome_show()
 elif section == "📝 Anonymous Confession Wall":
     st.markdown('Currently Unavailable !!!')
 elif section == "ℹ️ About":
