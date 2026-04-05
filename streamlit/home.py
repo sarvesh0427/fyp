@@ -137,8 +137,10 @@ def home_show():
     all_normalized = list(normalized_column_map.keys())
 
     similar_name_map = {}
-    for _, row in df_sim.iterrows():
+
+    for row in df_sim.values:
         actual_symptom = row[0]
+        
         for alt_name in row[1:]:
             if pd.notna(alt_name):
                 key = str(alt_name).strip().lower().replace("_", " ")
